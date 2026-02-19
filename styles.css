@@ -1794,12 +1794,239 @@ h1, h2, h3, h4 {
 
 /* 3D Deck Visuals Optimization */
 .deck-layer {
-    /* Soften Shadow */
+    /* Soften Shadow & Improve Thickness Visibility for Dark Cards */
     box-shadow: 
-        0 1px 2px rgba(0,0,0,0.15), /* Soft ambient */
-        0 0 1px rgba(0,0,0,0.1); /* Border definition */
-    border: 1px solid rgba(0,0,0,0.05);
+        inset 0 0 0 1px rgba(255,255,255,0.2), /* Stronger inner highlight */
+        inset 0 -1px 0 rgba(0,0,0,0.3), /* Inner shadow for depth */
+        0.5px 0.5px 0 #d1d5db, /* Light Gray Thickness */
+        1px 1px 0 #9ca3af, /* Gray Thickness */
+        1.5px 1.5px 0 #6b7280, /* Darker Gray Thickness */
+        2px 2px 4px rgba(0,0,0,0.4); /* Drop Shadow */
+    border: 1px solid rgba(255,255,255,0.1); /* Lighter border for definition */
 }
+
+/* Ensure Top Card also pops */
+.deck-top-card {
+    /* ... existing styles ... */
+    box-shadow: 
+        inset 0 0 0 1px rgba(255,255,255,0.25),
+        inset 0 -1px 0 rgba(0,0,0,0.2),
+        0.5px 0.5px 0 #d1d5db,
+        1px 1px 0 #9ca3af,
+        1.5px 1.5px 0 #6b7280,
+        0 4px 8px rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Mobile Adaptation */
+@media (max-width: 768px) {
+    /* Global Layout Reset */
+    body {
+        overscroll-behavior: none; /* Prevent bounce effect on body */
+    }
+
+    .app-container {
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .main-content {
+        height: 100%;
+        padding-top: calc(56px + env(safe-area-inset-top));
+        padding-bottom: calc(64px + env(safe-area-inset-bottom));
+        overflow: hidden;
+    }
+
+    .game-layout {
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    /* Fixed Header */
+    .app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: calc(56px + env(safe-area-inset-top));
+        padding-top: env(safe-area-inset-top);
+        padding-left: 16px;
+        padding-right: 16px;
+        z-index: 4000; /* Increased to be above drawers (3000) */
+        background: rgba(255, 255, 255, 0.95) !important; 
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 0 rgba(0,0,0,0); 
+        transition: box-shadow 0.3s;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+    }
+    
+    .app-header.scrolled {
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Adjust Header Elements */
+    .header-left h1 {
+        font-size: 18px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .header-center {
+        gap: 8px;
+    }
+
+    /* 1. Character Column (Top 30%) */
+    .character-column {
+        flex: 0 0 30vh !important;
+        width: 100% !important;
+        order: 1;
+        border-bottom: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        overflow: hidden; /* Manage scroll internally */
+        display: flex;
+        flex-direction: column;
+    }
+
+    .character-list-vertical {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 16px;
+        gap: 12px;
+        align-items: center;
+        height: 100%;
+        -webkit-overflow-scrolling: touch; /* Inertia scroll */
+    }
+
+    .character-card-container {
+        width: 260px; /* Wider for mobile horizontal view */
+        height: 90%;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+    
+    /* Hide header in char column to save space? Or keep it? */
+    .character-column .panel-header {
+        display: none; /* Hide title bar to maximize space */
+    }
+
+    /* 2. 3D Deck Preview (Remaining Space) */
+    .deck-3d-column {
+        flex: 1 !important; /* Occupy remaining vertical space */
+        order: 2;
+        width: 100% !important;
+        height: auto !important; /* Reset fixed height */
+        background-attachment: scroll; /* Fix for mobile bg */
+    }
+
+    /* 3. Drawers (Deck Content & Library) */
+    .deck-content-column,
+    .library-section {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+        z-index: 3000;
+        transform: translateY(100%);
+        transition: transform 300ms ease-out;
+        flex: none !important;
+        padding-top: calc(56px + env(safe-area-inset-top)); /* Make space for header */
+        background: white;
+    }
+
+    .deck-content-column.active,
+    .library-section.active {
+        transform: translateY(0);
+        display: flex !important; /* Override hidden */
+    }
+    
+    /* Overlay Backdrop for Drawers */
+    .drawer-backdrop {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 2999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 300ms;
+    }
+    
+    .drawer-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Hide Resizers */
+    .resizer { display: none !important; }
+
+    /* Bottom Navigation */
+    .bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: env(safe-area-inset-bottom);
+        background: rgba(255, 255, 255, 0.95);
+        border-top: 1px solid #eee;
+        z-index: 2000;
+        justify-content: space-around;
+        align-items: center;
+        backdrop-filter: blur(10px);
+    }
+
+    .nav-item {
+        flex: 1;
+        height: 100%;
+        border: none;
+        background: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: #666;
+        font-size: 12px;
+    }
+
+    .nav-item .icon {
+        font-size: 24px;
+    }
+    
+    .nav-item:active {
+        background: rgba(0,0,0,0.05);
+    }
+
+    /* Drag & Drop Highlighting */
+    .character-card-container.drag-target {
+        border: 2px solid #4A90E2 !important;
+        box-shadow: 0 0 12px rgba(74, 144, 226, 0.5);
+    }
+    
+    /* Library Close Button */
+    #mobile-library-close-btn {
+        display: block !important;
+    }
+}
+
+/* Default Bottom Nav (Hidden on Desktop) */
+.bottom-nav {
+    display: none;
+}
+.drawer-backdrop {
+    display: none;
+}
+@media (max-width: 768px) {
+    .drawer-backdrop { display: block; }
+}
+
+
 
 /* Feedback Animations */
 @keyframes pulse-add {
@@ -2098,7 +2325,96 @@ h1, h2, h3, h4 {
     user-select: none; /* Prevent text selection */
 }
 
-.session-info-window {
-    user-select: none;
+/* --- Mobile/Desktop Visibility --- */
+.mobile-only {
+    display: none !important;
 }
+
+.desktop-only {
+    display: flex !important; /* Assuming flex containers */
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: flex !important;
+    }
+    
+    .desktop-only {
+        display: none !important;
+    }
+    
+    /* Mobile Header Styling */
+    .mobile-header-content {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+    }
+    
+    .mobile-title {
+        font-size: 18px;
+        font-weight: 500;
+        margin: 0;
+        color: inherit;
+    }
+    
+    .mobile-header-content .icon-btn {
+        width: 48px; /* Touch target size */
+        height: 48px;
+        padding: 12px;
+        border: none;
+        background: transparent;
+        color: inherit;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .mobile-header-content .icon-btn:active {
+        background: rgba(0,0,0,0.05);
+    }
+}
+
+/* --- Drag & Drop Visuals --- */
+.dragging-clone {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none; /* Let events pass through to detect drop target */
+    opacity: 0.9;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    transform-origin: center center;
+    transition: transform 0.1s; /* Smooth follow */
+    width: 160px; /* Match standard card width */
+    height: 224px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    /* Ensure content is visible */
+    overflow: hidden;
+}
+
+/* Ensure clone looks like a card */
+.dragging-clone .card-title {
+    font-size: 16px;
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Highlight Drop Target */
+.character-card-container.drag-target-active {
+    border: 2px solid #4A90E2 !important;
+    box-shadow: 0 0 12px rgba(74, 144, 226, 0.6) !important;
+    transform: scale(1.02);
+}
+
+/* Ensure no bounce on body during drag */
+body.dragging-active {
+    overflow: hidden;
+    touch-action: none;
+}
+
 
