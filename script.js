@@ -60,15 +60,15 @@ const closeSessionInfoBtn = document.getElementById('close-session-info');
 const sessionInfoContent = document.getElementById('session-info-content');
 const sessionInfoHeader = document.getElementById('session-info-header');
 
-// Library Collapse Button
-const showLibraryBtn = document.getElementById('show-library-btn');
+// Library Toggle Button
+const libraryToggleBtn = document.getElementById('library-toggle-btn');
 
 // Character Elements
 const addCharBtn = document.getElementById('add-char-btn');
 const characterListDiv = document.getElementById('character-list');
 
-// Resizer
-const libraryResizer = document.getElementById('library-resizer');
+// Resizer (Removed)
+// const libraryResizer = document.getElementById('library-resizer');
 
 // Modal Elements
 const charModal = document.getElementById('char-modal');
@@ -101,45 +101,29 @@ function showToast(msg) {
     }, 2000);
 }
 
-// Sidebar Hot Zone Logic
-const sidebarHotZone = document.getElementById('sidebar-hot-zone');
-let sidebarHideTimer = null;
-
-function showSidebarButton() {
-    // Only show if collapsed
-    // We check class 'collapsed' on librarySection
-    if (librarySection.classList.contains('collapsed')) {
-        showLibraryBtn.classList.add('visible');
-    }
+// Library Toggle Logic
+if (libraryToggleBtn) {
+    libraryToggleBtn.addEventListener('click', () => {
+        librarySection.classList.toggle('hidden');
+        
+        // Ensure resizers are shown/hidden
+        // Resizer AFTER library is handled by CSS .library-section.hidden + .resizer
+        // Resizer BEFORE library (resizer-deck-library) is handled by :has() in CSS
+        // But for safety, let's toggle class on resizer-deck-library
+        const deckResizer = document.getElementById('resizer-deck-library');
+        if (deckResizer) {
+             if (librarySection.classList.contains('hidden')) {
+                 deckResizer.classList.add('hidden');
+             } else {
+                 deckResizer.classList.remove('hidden');
+             }
+        }
+    });
 }
 
-function hideSidebarButton() {
-    // Small delay to allow moving from hotzone to button
-    // But if we are hovering the button itself, we shouldn't hide.
-    // The event listener logic handles this by attaching to both.
-    // However, moving between them might trigger mouseleave -> hide.
-    // We need a shared timer reset.
-    if (sidebarHideTimer) clearTimeout(sidebarHideTimer);
-    
-    sidebarHideTimer = setTimeout(() => {
-        showLibraryBtn.classList.remove('visible');
-    }, 300);
-}
+// Initial state check
+// Library is hidden by default in HTML
 
-// Ensure clear timeout on enter
-function cancelHideSidebarButton() {
-    if (sidebarHideTimer) clearTimeout(sidebarHideTimer);
-    showSidebarButton();
-}
-
-if (sidebarHotZone) {
-    sidebarHotZone.addEventListener('mouseenter', cancelHideSidebarButton);
-    sidebarHotZone.addEventListener('mouseleave', hideSidebarButton);
-}
-if (showLibraryBtn) {
-    showLibraryBtn.addEventListener('mouseenter', cancelHideSidebarButton);
-    showLibraryBtn.addEventListener('mouseleave', hideSidebarButton);
-}
 
 // Add click listener to hot zone as well? No, hot zone is just for revealing.
 // But if the button is small, maybe clicking hotzone near button should work?
@@ -247,92 +231,98 @@ librarySearchInput.addEventListener('input', () => {
 });
 
 // Library View Toggle
-toggleLibraryViewBtn.addEventListener('click', () => {
-    setLibraryMode(!isLibraryExpanded);
-});
-
-// Resizer Logic (Refined for auto-switch)
-let isResizing = false;
-let resizeRaf = null;
-
-const MIN_LIB_WIDTH = 200;
-const MAX_LIB_WIDTH = 600;
-const COLLAPSE_THRESHOLD = 150; // Threshold to auto-collapse
-
-libraryResizer.addEventListener('mousedown', (e) => {
-    isResizing = true;
-    document.body.style.cursor = 'ew-resize';
-    document.body.style.userSelect = 'none'; // Prevent text selection
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', stopResize);
-});
-
-function onMouseMove(e) {
-    if (!isResizing) return;
-    const clientX = e.clientX;
-    if (resizeRaf) cancelAnimationFrame(resizeRaf);
-    resizeRaf = requestAnimationFrame(() => handleResize(clientX));
+if (toggleLibraryViewBtn) {
+    toggleLibraryViewBtn.addEventListener('click', () => {
+        setLibraryMode(!isLibraryExpanded);
+    });
 }
 
-function handleResize(clientX) {
-    const containerWidth = document.body.clientWidth;
-    // Right section width = Container Width - Mouse X
-    let newWidth = containerWidth - clientX;
+// Resizable Panels Logic
+const resizers = document.querySelectorAll('.resizer');
+
+resizers.forEach(resizer => {
+    let isResizing = false;
+    let prevX = 0;
     
-    // Check collapse
-    if (newWidth < COLLAPSE_THRESHOLD) {
-        // Collapse mode
-        librarySection.classList.add('collapsed');
-        showLibraryBtn.classList.remove('hidden');
-        // Make button partially visible immediately when collapsed, so user knows it's there?
-        // User requested "Visible only when collapsed... edge hot zone... fade in".
-        // If it's truly invisible until hover, user might think it's gone.
-        // Let's force a brief flash or just rely on hot zone.
-        // I'll keep it as is, but verify z-index in CSS.
+    // We bind these dynamically on mousedown to capture current context
+    let leftPanel = null;
+    let rightPanel = null;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        prevX = e.clientX;
+        leftPanel = resizer.previousElementSibling;
+        rightPanel = resizer.nextElementSibling;
         
-        // Clear style width so css takes over (width: 0)
-        librarySection.style.flexBasis = ''; 
-        return;
-    } else {
-         librarySection.classList.remove('collapsed');
-         showLibraryBtn.classList.add('hidden');
-         showLibraryBtn.classList.remove('visible'); // Ensure it hides
+        resizer.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        
+        // Add global listeners
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function onMouseMove(e) {
+        if (!isResizing) return;
+        const dx = e.clientX - prevX;
+        prevX = e.clientX;
+        
+        // Identify which resizer this is
+        if (resizer.id === 'resizer-char-deck') {
+            // Dragging between Char (Left) and Deck (Right)
+            // Resize Left Panel (Char)
+            const newWidth = leftPanel.offsetWidth + dx;
+            if (newWidth > 200 && newWidth < 500) {
+                leftPanel.style.flex = `0 0 ${newWidth}px`;
+            }
+        } else if (resizer.id === 'resizer-deck-library') {
+            // Dragging between Deck (Left) and Library (Right)
+            // Resize Right Panel (Library) inversely?
+            // Usually dragging a right-side panel border changes the right panel width if it's fixed.
+            // But here the resizer is on the LEFT of the Library.
+            // Moving resizer RIGHT (positive dx) means Library gets SMALLER (pushed).
+            // Moving resizer LEFT (negative dx) means Library gets BIGGER (pulled).
+            const newWidth = rightPanel.offsetWidth - dx;
+            if (newWidth > 200 && newWidth < 800) {
+                rightPanel.style.flex = `0 0 ${newWidth}px`;
+                
+                // Auto-switch Mode Logic
+                // Threshold: 2x card width. Card width is 80px (small) or more in expanded.
+                // Expanded card is roughly 160px? 
+                // Let's say if width > 350px (approx 2 columns of expanded cards + gap), switch to grid.
+                // If width < 350px, switch to list/compact.
+                // Actually user said "2x card width". 
+                // Let's use 360px as a safe threshold.
+                if (newWidth >= 360 && !isLibraryExpanded) {
+                    setLibraryMode(true);
+                } else if (newWidth < 360 && isLibraryExpanded) {
+                    setLibraryMode(false);
+                }
+            }
+        } else if (resizer.id === 'resizer-library-3d') {
+            // Dragging between Library (Left) and 3D (Right)
+            // Resize Right Panel (3D) inversely?
+            // Same logic: Resizer is on LEFT of 3D panel.
+            const newWidth = rightPanel.offsetWidth - dx;
+            if (newWidth > 250 && newWidth < 500) {
+                rightPanel.style.flex = `0 0 ${newWidth}px`;
+            }
+        }
     }
 
-    // Constraints
-    if (newWidth < MIN_LIB_WIDTH) newWidth = MIN_LIB_WIDTH;
-    if (newWidth > MAX_LIB_WIDTH) newWidth = MAX_LIB_WIDTH;
-    
-    librarySection.style.flexBasis = `${newWidth}px`;
-    
-    // Auto-switch mode logic
-    if (newWidth < 450) { 
-        if (isLibraryExpanded) {
-            setLibraryMode(false); // Switch to compact
-        }
-    } else {
-        if (!isLibraryExpanded) {
-            setLibraryMode(true); // Switch to expanded
-        }
+    function onMouseUp() {
+        isResizing = false;
+        resizer.classList.remove('resizing');
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
     }
-}
-
-showLibraryBtn.addEventListener('click', () => {
-    librarySection.classList.remove('collapsed');
-    showLibraryBtn.classList.add('hidden');
-    librarySection.style.flexBasis = '360px'; // Restore default
-    setLibraryMode(false); // Default to compact on restore usually better? Or keep state.
 });
 
-function stopResize() {
-    isResizing = false;
-    document.body.style.cursor = 'default';
-    document.body.style.userSelect = ''; // Restore text selection
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', stopResize);
-    if (resizeRaf) cancelAnimationFrame(resizeRaf);
-}
 
+// Initialize library mode correctly
 function setLibraryMode(expanded) {
     isLibraryExpanded = expanded;
     if (isLibraryExpanded) {
@@ -340,16 +330,18 @@ function setLibraryMode(expanded) {
         madnessContainer.classList.remove('compact-view');
         madnessContainer.classList.add('expanded-view');
         if(libraryModeLabel) libraryModeLabel.textContent = '平铺模式';
+        // Ensure minimum width if manually toggled
         if (librarySection.offsetWidth < 360) {
-            librarySection.style.flexBasis = '360px';
+            librarySection.style.flex = '0 0 360px';
         }
     } else {
         librarySection.classList.add('compact');
         madnessContainer.classList.remove('expanded-view');
         madnessContainer.classList.add('compact-view');
         if(libraryModeLabel) libraryModeLabel.textContent = '堆叠模式';
-        if (librarySection.offsetWidth > 250 || librarySection.offsetWidth < 100) {
-            librarySection.style.flexBasis = '220px';
+        // Allow shrinking
+        if (librarySection.offsetWidth > 350) {
+            librarySection.style.flex = '0 0 250px';
         }
     }
 }
@@ -420,9 +412,34 @@ function adjustCardFontSize(cardEl) {
     // Deprecated
 }
 
+// Helper for Long Press (Tablet)
+function addLongPressHandler(element, callback) {
+    let timer;
+    const delay = 500; // 500ms for long press
+
+    element.addEventListener('touchstart', (e) => {
+        timer = setTimeout(() => {
+            timer = null;
+            // Trigger callback with coordinates from first touch
+            const touch = e.touches[0];
+            callback(touch.clientX, touch.clientY);
+        }, delay);
+    }, { passive: true });
+
+    const cancel = () => {
+        if (timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    };
+
+    element.addEventListener('touchend', cancel);
+    element.addEventListener('touchmove', cancel);
+}
+
 function createCardElement(card, isDeckItem = false) {
     const el = document.createElement('div');
-    el.className = 'card';
+    el.className = 'card insanity-card'; // Added insanity-card class as requested
     
     // REMOVED inner wrapper <div class="flex flex-col h-full"> 
     // because .card itself is now the flex column container.
@@ -445,16 +462,18 @@ function createCardElement(card, isDeckItem = false) {
     const backImg = isNewFormat ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
     el.setAttribute('data-back-img', backImg);
 
+    // Build Card HTML with Songti Fonts and Centered Labels
     el.innerHTML = `
             <h3 class="card-title">${card.name}</h3>
+            <!-- English name hidden via CSS .card-eng display:none -->
             <p class="card-eng">${card.nameEn || ''}</p>
             <div class="card-text">
                 <div class="card-trigger-section">
-                    <p class="card-label">触发条件</p>
+                    <span class="card-label">触发</span>
                     <p class="card-content-text">${card.trigger}</p>
                 </div>
                 <div class="card-effect-section">
-                    <p class="card-label">效果</p>
+                    <span class="card-label">效果</span>
                     <p class="card-content-text">${card.effect}</p>
                 </div>
                 ${card.remarks ? `<div class="card-remark" style="margin-top:auto">${card.remarks}</div>` : ''}
@@ -494,6 +513,11 @@ function createCardElement(card, isDeckItem = false) {
         e.stopPropagation();
         showCardContextMenu(e.clientX, e.clientY, card);
     };
+
+    // Long Press for Tablet
+    addLongPressHandler(el, (x, y) => {
+        showCardContextMenu(x, y, card);
+    });
 
     // Slider (Madness Library Feature) - REMOVED
 
@@ -880,14 +904,41 @@ function renderCharacters(room) {
                     }
                 };
                 
-                // Click/Context (Keep logic)
-                miniCard.onclick = (e) => {
+                // Long Press Logic (Tablet Adaptation) - REPLACED for Context Menu
+                addLongPressHandler(miniCard, (x, y) => {
+                    showContextMenu(x, y, card, char.id);
+                });
+
+                // Tap for Tooltip (Simple Touch)
+                miniCard.addEventListener('touchstart', (e) => {
+                    // Trigger Tooltip immediately on touch? Or just let long press handle context?
+                    // User request: "All right click functions -> Long Press".
+                    // Tooltip is hover. On tablet, maybe tap triggers tooltip?
+                    // Existing logic had long press trigger tooltip.
+                    // Let's make TAP trigger tooltip.
+                    if (!miniCard._tooltipEl) {
+                         miniCard.onmouseenter(e);
+                         // Hide after delay?
+                         setTimeout(() => {
+                             if(miniCard._tooltipEl) miniCard.onmouseleave(e);
+                         }, 3000);
+                    }
+                }, {passive: true});
+                
+                // Click/Context (Modified to Double Click)
+                miniCard.ondblclick = (e) => {
                     e.stopPropagation();
                     if (miniCard._tooltipEl) miniCard._tooltipEl.remove();
                     card.isRevealed = !card.isRevealed;
                     saveData();
                     renderCharacters(getCurrentRoom());
                 };
+                
+                // Prevent single click from doing anything if it was previously doing something
+                miniCard.onclick = (e) => {
+                    e.stopPropagation(); // Stop propagation to char card
+                };
+
                 
                 miniCard.oncontextmenu = (e) => {
                     e.preventDefault();
@@ -1152,6 +1203,10 @@ function initSessionInfo() {
         sessionInfoWindow.classList.add('hidden');
     });
 
+    // Prevent text selection and default drag behavior
+    sessionInfoWindow.addEventListener('dragstart', (e) => e.preventDefault());
+    sessionInfoWindow.addEventListener('selectstart', (e) => e.preventDefault());
+
     // Draggable Logic
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
@@ -1222,8 +1277,8 @@ function updateSessionInfo() {
             <div class="info-item"><span>已抽:</span> <strong>${drawnCount}</strong></div>
         </div>
         <div class="info-divider"></div>
-        <div class="info-section-title">各角色手牌 (未公开):</div>
-        <div class="char-hand-grid">
+        <div class="info-section-title">各角色手牌 (点击展开):</div>
+        <div class="char-hand-list" style="display:flex; flex-direction:column; gap:4px;">
     `;
 
     if (charCounts.length === 0) {
@@ -1241,10 +1296,21 @@ function updateSessionInfo() {
                 badgeStyle = 'background-color: #e74c3c; color: white;'; // Red
             }
 
+            // Prepare names
+            const handNames = unrevealedCards.map(c => `【${c.name}】`).join(' ') || '无手牌';
+            const detailId = `hand-detail-${char.id}`;
+
             html += `
-                <div class="char-hand-item">
-                    <span class="char-name-compact" title="${char.name}">${char.name}</span>
-                    <span class="${badgeClass}" style="${badgeStyle}">${handSize}</span>
+                <div class="char-hand-item-wrapper" style="border:1px solid #e5e7eb; border-radius:4px; background:white;">
+                    <div class="char-hand-header" 
+                         onclick="const el = document.getElementById('${detailId}'); el.classList.toggle('hidden');" 
+                         style="padding:4px 8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#f9fafb;">
+                        <span class="char-name-compact" title="${char.name}" style="font-weight:500;">${char.name}</span>
+                        <span class="${badgeClass}" style="${badgeStyle}">${handSize}</span>
+                    </div>
+                    <div id="${detailId}" class="hidden" style="padding:4px 8px; font-size:0.75rem; color:#666; border-top:1px solid #eee; background:white;">
+                        ${handNames}
+                    </div>
                 </div>
             `;
         });
@@ -1292,6 +1358,7 @@ function addToDeck(card) {
     room.deck.push(deckCard);
     saveData();
     updateDeckVisuals(room);
+    triggerDeckAnimation('add'); // Visual feedback
     renderMadnessCards(categoryFilter.value); // Refresh Library UI
 }
 
@@ -1483,9 +1550,6 @@ function handleDrop(e) {
         const json = e.dataTransfer.getData('application/json');
         if (json) {
             const cardData = JSON.parse(json);
-            // If dropped on a specific card, we could insert there, but addToDeck is simpler for now
-            // Or we could implement insert logic if 'this' is a card.
-            // For now, let's just add to deck.
             addToDeck(cardData);
         }
         return false;
@@ -1532,113 +1596,244 @@ function handleDragEnd(e) {
     draggedItem = null;
 }
 
+// 3D Rendering Constants
+const MAX_RENDER_LAYERS = 60; // Render up to 60 cards
+const CARD_THICKNESS = 1.0; // Visual thickness per card (px)
+const RANDOM_OFFSET_RANGE = 0.5; // +/- px - Reduced for subtle effect
+const RANDOM_ROTATION_RANGE = 1; // +/- deg
+
+// Animation Helper
+function triggerDeckAnimation(type) {
+    // type: 'add' or 'remove'
+    const cls = `pulse-${type}`;
+    deck3dStack.classList.remove('pulse-add', 'pulse-remove');
+    // Trigger reflow
+    void deck3dStack.offsetWidth;
+    deck3dStack.classList.add(cls);
+    
+    // Remove after animation
+    setTimeout(() => {
+        deck3dStack.classList.remove(cls);
+    }, 300);
+}
+
+// Seeded Random Helper
+function seededRandom(seed) {
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
+
 function render3DStack(count) {
     const topCard = deck3dStack.querySelector('.deck-top-card');
     const room = getCurrentRoom();
     
-    // Keep top card, remove layers
-    (deck3dStack.querySelectorAll('.deck-layer')).forEach(l => l.remove());
+    // Clear existing layers
+    const layers = deck3dStack.querySelectorAll('.deck-layer');
+    layers.forEach(l => l.remove());
     
     if (count === 0 || !room || room.deck.length === 0) {
         const emptyPlaceholder = document.createElement('div');
-        emptyPlaceholder.className = 'deck-layer';
-        emptyPlaceholder.style.background = 'transparent';
-        emptyPlaceholder.style.border = '2px dashed #999';
-        emptyPlaceholder.style.display = 'flex';
-        emptyPlaceholder.style.justifyContent = 'center';
-        emptyPlaceholder.style.alignItems = 'center';
+        emptyPlaceholder.className = 'deck-layer empty-layer';
         emptyPlaceholder.textContent = 'Empty';
-        emptyPlaceholder.style.color = '#999';
         deck3dStack.insertBefore(emptyPlaceholder, topCard);
-        topCard.style.display = 'none'; // Hide top card if empty
+        topCard.style.display = 'none';
         return;
     }
     
     topCard.style.display = 'flex';
     
-    // Get actual top card from deck data (last element)
-    const topCardData = room.deck[room.deck.length - 1];
-    const topBackImg = (topCardData.isNewFormat) ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
-    topCard.style.backgroundImage = `url('${topBackImg}')`;
-
-    const maxLayers = 30; 
+    // Render Strategy:
+    // Bottom Fixed: Z=0
+    // Growing Upwards: Z increases with index
+    // We limit to MAX_RENDER_LAYERS.
+    // If deck > MAX, we render the *top* MAX cards, so the user sees the active part of the deck.
+    // But visually we anchor the bottom of this "visible stack" to Z=0.
     
-    // Create layers from top down
-    const layersUnderTop = Math.min(count - 1, maxLayers);
+    const renderCount = Math.min(count, MAX_RENDER_LAYERS);
+    // Determine the subset of deck to render (the top N cards)
+    // deck array: [0: Bottom, ..., length-1: Top]
+    // subset start index in real deck
+    const subsetStartIndex = room.deck.length - renderCount; 
     
-    for (let i = 0; i < layersUnderTop; i++) {
+    // Loop through the cards BELOW the top card
+    // i goes from 0 to renderCount - 2 (since top card is renderCount - 1)
+    for (let i = 0; i < renderCount - 1; i++) {
+        // Actual index in the room.deck array
+        const realIndex = subsetStartIndex + i;
+        const cardData = room.deck[realIndex];
+        
         const layer = document.createElement('div');
         layer.className = 'deck-layer';
         
-        const deckIndex = room.deck.length - 2 - i;
-        let layerBackImg = 'img/卡背.png'; 
-        if (deckIndex >= 0) {
-             const layerCardData = room.deck[deckIndex];
-             layerBackImg = (layerCardData.isNewFormat) ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
-        }
+        // Background
+        const backImg = (cardData.isNewFormat) ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
+        layer.style.backgroundImage = `url('${backImg}')`;
         
-        layer.style.backgroundImage = `url('${layerBackImg}')`;
+        // Z-Index: Higher index = Higher Z
+        layer.style.zIndex = i;
         
-        // Z-Index: Top card is highest. Layers underneath decrease.
-        layer.style.zIndex = layersUnderTop - i;
+        // Random Transform
+        const seed = cardData.uniqueId.toString().split('').reduce((a,b)=>a+b.charCodeAt(0),0);
+        const rndX = (seededRandom(seed) - 0.5) * 2 * RANDOM_OFFSET_RANGE;
+        const rndY = (seededRandom(seed + 1) - 0.5) * 2 * RANDOM_OFFSET_RANGE;
+        const rndRot = (seededRandom(seed + 2) - 0.5) * 2 * RANDOM_ROTATION_RANGE;
+        
+        // Position: Z grows up
+        const zPos = i * CARD_THICKNESS;
+        // XY Offset for staircase effect (Left-Up direction: negative X, negative Y)
+        const xPos = i * -2; 
+        const yPos = i * -2;
+        
+        layer.style.transform = `translate3d(${rndX + xPos}px, ${rndY + yPos}px, ${zPos}px) rotateZ(${rndRot}deg)`;
+        
+        // Brightness: Lower cards slightly darker
+        const brightness = 0.8 + (i / renderCount) * 0.2;
+        layer.style.filter = `brightness(${brightness})`;
         
         deck3dStack.insertBefore(layer, topCard);
     }
     
-    // Top card should be highest.
-    topCard.style.zIndex = layersUnderTop + 2;
+    // Top Card
+    const topCardData = room.deck[room.deck.length - 1];
+    const topSeed = topCardData.uniqueId.toString().split('').reduce((a,b)=>a+b.charCodeAt(0),0);
+    const topRndRot = (seededRandom(topSeed + 2) - 0.5) * 2 * 0.5; // Less rotation for top
     
-    // Calculate transforms
-    const totalShift = layersUnderTop * 1.5;
-    topCard.style.transform = `translate(-${totalShift}px, -${totalShift}px)`;
-   
-   // Fix loop transforms.
-   const layers = deck3dStack.querySelectorAll('.deck-layer');
-   (deck3dStack.querySelectorAll('.deck-layer')).forEach((layer, i) => {
-       // i=0 is just under top.
-       // Dist from top = 1.5.
-       // Top pos = totalShift.
-       // Layer pos = totalShift - 1.5*(i+1).
-       const pos = totalShift - (1.5 * (i + 1));
-       layer.style.transform = `translate(-${pos}px, -${pos}px)`;
-   });
+    // Top Card Z position
+    const topZ = (renderCount - 1) * CARD_THICKNESS;
+    const topX = (renderCount - 1) * -2;
+    const topY = (renderCount - 1) * -2;
+    
+    topCard.style.transform = `translate3d(${topX}px, ${topY}px, ${topZ}px) rotateZ(${topRndRot}deg)`;
+    topCard.style.zIndex = renderCount; // On top
+    
+    const topBackImg = (topCardData.isNewFormat) ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
+    topCard.style.backgroundImage = `url('${topBackImg}')`;
+    
+    updateDeckLighting();
 }
 
-// 3D Deck Click -> Draw for Character
+// Mouse Move for Dynamic Lighting
+document.addEventListener('mousemove', (e) => {
+    // Throttle for performance
+    requestAnimationFrame(() => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
+        const dx = (e.clientX - cx) / cx; // -1 to 1
+        const dy = (e.clientY - cy) / cy; // -1 to 1
+        
+        // Update CSS Variables for lighting
+        document.documentElement.style.setProperty('--light-x', -dx * 20 + 'px');
+        document.documentElement.style.setProperty('--light-y', -dy * 20 + 'px');
+        document.documentElement.style.setProperty('--sheen-opacity', 0.3 + (Math.abs(dx) + Math.abs(dy)) * 0.1);
+        document.documentElement.style.setProperty('--sheen-pos', `${50 + dx * 50}% ${50 + dy * 50}%`);
+    });
+});
+
+function updateDeckLighting() {
+    // Just triggers CSS update if needed
+}
+
+// 3D Deck Click -> Draw for Character OR Show Top Card (if no char selected)
 deck3dStack.addEventListener('click', (e) => {
-    // Only trigger if clicking on the deck itself (not empty space, though stack is usually tight)
-    // Actually, let's allow clicking anywhere in the stack area to be safe
     const room = getCurrentRoom();
-    if (!room || room.deck.length === 0) return;
+    if (!room || room.deck.length === 0) {
+        showToast("牌堆为空");
+        return;
+    }
     
-    if (currentCharacterId) {
+    // Check if character selected
+    if (currentCharacterId && room.characters.find(c => c.id === currentCharacterId)) {
         // Draw to character
         drawToCharacter(1);
     } else {
-        // Global draw
-        drawCards(1);
+        // Show Top Card (Peek) without drawing
+        showTopCard();
     }
 });
+
+function showTopCard() {
+    const room = getCurrentRoom();
+    if (!room || room.deck.length === 0) return;
+
+    const topCard = room.deck[room.deck.length - 1];
+    
+    // Create a modal or overlay to show the card
+    // We can reuse the drawResultOverlay but with a different title and no "drawn" logic
+    drawnCardsDisplay.innerHTML = '';
+    const cardEl = createCardElement(topCard);
+    
+    // Ensure card style matches Deck Content
+    cardEl.classList.add('deck-preview-card'); // Add specific class if needed for override
+    
+    // Ensure text is visible and layout is correct
+    const textSection = cardEl.querySelector('.card-text');
+    if (textSection) textSection.style.display = 'flex'; 
+    
+    drawnCardsDisplay.appendChild(cardEl);
+    
+    const titleEl = drawResultOverlay.querySelector('h3');
+    // Store original title to restore later if needed, or just set it
+    // If we don't store it, it stays as "牌堆顶卡牌" until next draw resets it?
+    // drawCards function sets overlay but doesn't set title?
+    // Wait, drawResultOverlay usually has a static title in HTML?
+    // Let's check HTML. I don't have HTML content. Assuming it has an H3.
+    
+    if (titleEl) {
+        if (!titleEl.dataset.originalText) {
+            titleEl.dataset.originalText = titleEl.textContent;
+        }
+        titleEl.textContent = "牌堆顶卡牌 (未抽取)";
+    }
+    
+    drawResultOverlay.classList.remove('hidden');
+    
+    // Restore title on close
+    const closeHandler = () => {
+        if (titleEl && titleEl.dataset.originalText) {
+            titleEl.textContent = titleEl.dataset.originalText;
+        }
+        closeDrawBtn.removeEventListener('click', closeHandler);
+    };
+    closeDrawBtn.addEventListener('click', closeHandler);
+}
 
 function drawToCharacter(count) {
     const room = getCurrentRoom();
     const char = room.characters.find(c => c.id === currentCharacterId);
     if (!room || !char || room.deck.length < count) return;
     
-    for(let i=0; i<count; i++) {
-        // Draw from Top (End of array)
-        const card = room.deck.pop();
+    // Animate Top Card if drawing 1
+    const topCard = deck3dStack.querySelector('.deck-top-card');
+    if (count === 1 && topCard && topCard.style.display !== 'none') {
+        // Animation
+        topCard.style.transition = 'all 0.3s ease-in';
+        topCard.style.transform = 'translate3d(0, -200px, 100px) rotateZ(10deg)';
+        topCard.style.opacity = '0';
         
-        // Add to character hand
-        char.cards.push({
-            ...card,
-            isRevealed: false // Face down initially
-        });
+        setTimeout(() => {
+            performDraw();
+        }, 250); // Slightly faster than transition to feel snappy
+    } else {
+        performDraw();
     }
     
-    saveData();
-    updateDeckVisuals(room);
-    renderCharacters(room);
+    function performDraw() {
+        for(let i=0; i<count; i++) {
+            // Draw from Top (End of array)
+            const card = room.deck.pop();
+            
+            // Add to character hand
+            char.cards.push({
+                ...card,
+                isRevealed: false // Face down initially
+            });
+        }
+        
+        saveData();
+        updateDeckVisuals(room);
+        triggerDeckAnimation('remove'); // Visual feedback for stack
+        renderCharacters(room);
+    }
 }
 
 // Global Draw (No character selected or manual button click)
@@ -1651,25 +1846,42 @@ function drawCards(count) {
         return;
     }
 
-    const drawn = [];
-    for(let i=0; i<count; i++) {
-        if (room.deck.length === 0) break;
-        // Draw from Top (End of array)
-        const card = room.deck.pop();
-        drawn.push(card);
+    // Animate Top Card if drawing 1
+    const topCard = deck3dStack.querySelector('.deck-top-card');
+    if (count === 1 && topCard && topCard.style.display !== 'none') {
+        topCard.style.transition = 'all 0.3s ease-in';
+        topCard.style.transform = 'translate3d(0, -200px, 100px) rotateZ(10deg)';
+        topCard.style.opacity = '0';
+        
+        setTimeout(() => {
+            performGlobalDraw();
+        }, 250);
+    } else {
+        performGlobalDraw();
     }
-    
-    saveData();
-    updateDeckVisuals(room);
-    
-    // Show Overlay
-    drawnCardsDisplay.innerHTML = '';
-    drawn.forEach(card => {
-        const cardEl = createCardElement(card);
-        cardEl.querySelector('.card-text').style.display = 'block';
-        drawnCardsDisplay.appendChild(cardEl);
-    });
-    drawResultOverlay.classList.remove('hidden');
+
+    function performGlobalDraw() {
+        const drawn = [];
+        for(let i=0; i<count; i++) {
+            if (room.deck.length === 0) break;
+            // Draw from Top (End of array)
+            const card = room.deck.pop();
+            drawn.push(card);
+        }
+        
+        saveData();
+        updateDeckVisuals(room);
+        triggerDeckAnimation('remove'); // Visual feedback
+        
+        // Show Overlay
+        drawnCardsDisplay.innerHTML = '';
+        drawn.forEach(card => {
+            const cardEl = createCardElement(card);
+            cardEl.querySelector('.card-text').style.display = 'block';
+            drawnCardsDisplay.appendChild(cardEl);
+        });
+        drawResultOverlay.classList.remove('hidden');
+    }
 }
 
 closeDrawBtn.addEventListener('click', () => {
@@ -1680,6 +1892,62 @@ closeDrawBtn.addEventListener('click', () => {
 function saveData() {
     localStorage.setItem('insane_rooms', JSON.stringify(rooms));
 }
+
+// Edge Swipe to Close Modals / Library
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    const startX = e.touches[0].clientX;
+    const startY = e.touches[0].clientY;
+    
+    // Only detect swipe from left edge (first 30px)
+    if (startX > 30) return;
+
+    const handleTouchMove = (moveEvent) => {
+        // Prevent default browser back if we are handling it
+        // moveEvent.preventDefault(); 
+    };
+
+    const handleTouchEnd = (endEvent) => {
+        const endX = endEvent.changedTouches[0].clientX;
+        const endY = endEvent.changedTouches[0].clientY;
+        const diffX = endX - startX;
+        const diffY = Math.abs(endY - startY);
+
+        // Horizontal swipe > 100px and minimal vertical movement
+        if (diffX > 100 && diffY < 50) {
+            // Trigger "Back" Action: Close Modals or Sidebar
+            let handled = false;
+            
+            // 1. Close Modals
+            const modals = document.querySelectorAll('.modal:not(.hidden)');
+            if (modals.length > 0) {
+                modals.forEach(m => m.classList.add('hidden'));
+                handled = true;
+            }
+            
+            // 2. Close Library if expanded
+            if (!handled && isLibraryExpanded && librarySection) {
+                 // Actually librarySection is usually on the right. Swipe from left shouldn't close it?
+                 // Or maybe "Back" means return to previous state?
+                 // If library is open, maybe close it?
+                 // But swipe from LEFT usually means "Go Back". 
+                 // If library is overlay (on mobile), closing it makes sense.
+                 // In this layout, library is a column.
+                 // Let's just handle modals for now.
+            }
+            
+            if (handled) {
+                showToast("已关闭弹窗");
+            }
+        }
+        
+        document.removeEventListener('touchmove', handleTouchMove);
+        document.removeEventListener('touchend', handleTouchEnd);
+    };
+
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+}, { passive: true });
 
 // Start
 init();
