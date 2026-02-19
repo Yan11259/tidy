@@ -10,11 +10,12 @@
     <div class="app-container">
         <!-- 顶部：房间控制 (Header) -->
         <header class="app-header">
-            <div class="header-left">
+            <!-- Desktop Header Content -->
+            <div class="header-left desktop-only">
                 <h1>inSANe 狂气管理 <span id="current-room-name" class="room-name-display">未选择</span></h1>
             </div>
             
-            <div class="header-center">
+            <div class="header-center desktop-only">
                 <!-- Create Room -->
                 <div style="display:flex; gap:0.5rem; align-items: center;">
                     <label class="nav-toggle-label">
@@ -38,6 +39,23 @@
                 </button>
                 <button id="delete-room-btn" class="nav-action-btn nav-btn-danger" title="删除当前房间">
                     ✕
+                </button>
+            </div>
+
+            <!-- Mobile Header Content -->
+            <div class="mobile-header-content mobile-only">
+                <button id="mobile-back-btn" class="icon-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <h1 class="mobile-title">狂气管理</h1>
+                <button id="mobile-more-btn" class="icon-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="19" cy="12" r="1"/>
+                        <circle cx="5" cy="12" r="1"/>
+                    </svg>
                 </button>
             </div>
         </header>
@@ -102,6 +120,7 @@
                         <h3>狂气库</h3>
                         <div class="header-controls">
                             <span id="library-mode-label" class="library-mode-label">平铺模式</span>
+                            <button id="mobile-library-close-btn" class="icon-btn" style="display:none; border:none; font-size:1.2rem;">✕</button>
                         </div>
                     </div>
                     
@@ -160,6 +179,17 @@
                 </div>
             </div>
         </div>
+        <!-- Bottom Navigation (Mobile Only) -->
+        <nav class="bottom-nav">
+            <button id="mobile-nav-deck" class="nav-item">
+                <span class="icon">🎴</span>
+                <span class="label">牌堆内容</span>
+            </button>
+            <button id="mobile-nav-library" class="nav-item">
+                <span class="icon">📚</span>
+                <span class="label">狂气库</span>
+            </button>
+        </nav>
     </div>
 
     <div id="char-modal" class="modal hidden">
