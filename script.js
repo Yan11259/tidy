@@ -184,8 +184,133 @@ function init() {
         updateRoomUI();
     }
     
+    // Mobile Library Close
+    const mobileLibraryCloseBtn = document.getElementById('mobile-library-close-btn');
+    if (mobileLibraryCloseBtn) {
+        mobileLibraryCloseBtn.addEventListener('click', () => {
+            librarySection.classList.remove('active');
+            toggleBackdrop(false);
+        });
+    }
+
+    // Fix for "Clicking anywhere triggers input focus"
+    // Forces blur if clicking on non-interactive elements while an input is focused.
+    document.addEventListener('click', (e) => {
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+            // Allow clicking the input itself or its label
+            if (e.target === active || (e.target.tagName === 'LABEL' && e.target.control === active)) {
+                return;
+            }
+            // Allow clicking other interactive elements
+            if (['BUTTON', 'SELECT', 'A', 'SUMMARY', 'INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+                return;
+            }
+            // If clicking inside a container that handles input (like a custom dropdown), check up the tree?
+            // For this app, inputs are simple. Blurring on background click is safe.
+            active.blur();
+        }
+    }, { passive: true });
+
+    // Mobile Bottom Navigation Logic
+    const mobileNavDeck = document.getElementById('mobile-nav-deck');
+    const mobileNavLibrary = document.getElementById('mobile-nav-library');
+    const deckContentColumn = document.getElementById('deck-content-column');
+    
+    // Create Backdrop if not exists
+    let drawerBackdrop = document.querySelector('.drawer-backdrop');
+    if (!drawerBackdrop) {
+        drawerBackdrop = document.createElement('div');
+        drawerBackdrop.className = 'drawer-backdrop';
+        document.body.appendChild(drawerBackdrop);
+        drawerBackdrop.addEventListener('click', () => {
+            toggleBackdrop(false);
+            if (deckContentColumn) deckContentColumn.classList.remove('active');
+            if (librarySection) librarySection.classList.remove('active');
+        });
+    }
+
+    function toggleBackdrop(show) {
+        if (show) drawerBackdrop.classList.add('active');
+        else drawerBackdrop.classList.remove('active');
+    }
+
+    if (mobileNavDeck) {
+        mobileNavDeck.addEventListener('click', () => {
+            deckContentColumn.classList.add('active');
+            librarySection.classList.remove('active');
+            toggleBackdrop(true);
+        });
+    }
+
+    if (mobileNavLibrary) {
+        mobileNavLibrary.addEventListener('click', () => {
+            librarySection.classList.add('active');
+            deckContentColumn.classList.remove('active');
+            toggleBackdrop(true);
+        });
+    }
+
+    // Header Scroll Effect (Mobile)
+    const scrollContainers = [document.getElementById('deck-list'), document.getElementById('madness-container')];
+    const header = document.querySelector('.app-header');
+    
+    function handleScroll(e) {
+        if (e.target.scrollTop > 8) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
+    }
+    
+    scrollContainers.forEach(container => {
+        if (container) {
+            // Throttle scroll event (16ms)
+            let lastKnownScrollPosition = 0;
+            let ticking = false;
+            
+            container.addEventListener('scroll', (e) => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        handleScroll(e);
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            }, { passive: true });
+        }
+    });
+
     initAvatarModal();
     initSessionInfo();
+    
+    // Mobile Header Logic
+    const mobileBackBtn = document.getElementById('mobile-back-btn');
+    if (mobileBackBtn) {
+        mobileBackBtn.addEventListener('click', () => {
+            const deckContent = document.getElementById('deck-content-column');
+            const library = document.getElementById('library-section');
+            let closed = false;
+            
+            if (deckContent && deckContent.classList.contains('active')) {
+                deckContent.classList.remove('active');
+                closed = true;
+            }
+            if (library && library.classList.contains('active')) {
+                library.classList.remove('active');
+                closed = true;
+            }
+            
+            if (closed) toggleBackdrop(false);
+        });
+    }
+
+    const mobileMoreBtn = document.getElementById('mobile-more-btn');
+    if (mobileMoreBtn) {
+        mobileMoreBtn.addEventListener('click', () => {
+            if (sessionInfoBtn) sessionInfoBtn.click();
+        });
+    }
 }
 
 // Helper to get current data source
@@ -747,6 +872,7 @@ function renderCharacters(room) {
 
         const charEl = document.createElement('div');
         charEl.className = 'character-card-container';
+        charEl.dataset.charId = char.id; // Added for Mobile Drag & Drop
         if (char.id === currentCharacterId) {
             charEl.classList.add('selected');
         }
@@ -1518,6 +1644,9 @@ function updateDeckVisuals(room) {
             cardEl.addEventListener('drop', handleDrop);
             cardEl.addEventListener('dragend', handleDragEnd);
 
+            // Mobile Drag (Long Press)
+            addMobileDragHandler(cardEl, card);
+
             deckList.appendChild(cardEl);
         });
     }
@@ -1953,3 +2082,140 @@ document.addEventListener('touchstart', (e) => {
 init();
 // Check layout after init
 setTimeout(checkLibraryMode, 100);
+
+// --- Mobile Drag & Drop Implementation ---
+function addMobileDragHandler(el, cardData) {
+    let touchTimer = null;
+    let startX, startY;
+    
+    el.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        
+        // Visual Feedback for potential drag
+        el.style.transition = 'transform 0.2s';
+        el.style.transform = 'scale(0.95)';
+        
+        touchTimer = setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate(50);
+            startMobileDrag(e.touches[0], cardData, el);
+            touchTimer = null;
+        }, 500); // 500ms long press threshold
+    }, { passive: true });
+    
+    el.addEventListener('touchmove', (e) => {
+        if (touchTimer) {
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            // Cancel if moved too much before long press triggers
+            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+                clearTimeout(touchTimer);
+                touchTimer = null;
+                el.style.transform = ''; // Reset
+            }
+        }
+    }, { passive: true });
+    
+    el.addEventListener('touchend', () => {
+        if (touchTimer) {
+            clearTimeout(touchTimer);
+            el.style.transform = ''; // Reset
+        }
+    });
+}
+
+function startMobileDrag(touch, cardData, originalEl) {
+    originalEl.style.transform = ''; // Reset original
+
+    // 1. Create Clone for Dragging
+    const clone = originalEl.cloneNode(true);
+    clone.classList.add('dragging-clone');
+    clone.style.width = '160px'; // Force standard width
+    clone.style.height = '224px';
+    
+    // Center the clone under finger
+    clone.style.left = (touch.clientX - 80) + 'px'; 
+    clone.style.top = (touch.clientY - 112) + 'px';
+    
+    // Remove interactive elements from clone
+    const closeBtn = clone.querySelector('.card-close-btn');
+    if (closeBtn) closeBtn.remove();
+    const dragHandle = clone.querySelector('.drag-handle');
+    if (dragHandle) dragHandle.remove();
+    
+    document.body.appendChild(clone);
+    document.body.classList.add('dragging-active');
+    
+    // 2. Hide Drawer & Backdrop to reveal characters
+    const deckContentColumn = document.getElementById('deck-content-column');
+    const librarySection = document.getElementById('library-section');
+    const backdrop = document.querySelector('.drawer-backdrop');
+    
+    // Temporarily hide active drawers without changing state logic too much
+    // We just remove the class visually
+    if (deckContentColumn) deckContentColumn.classList.remove('active');
+    if (librarySection) librarySection.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+    
+    // 3. Global Move Listener
+    const moveHandler = (e) => {
+        e.preventDefault(); // Prevent scrolling
+        const t = e.touches[0];
+        
+        // Update Clone Position
+        clone.style.left = (t.clientX - 80) + 'px';
+        clone.style.top = (t.clientY - 112) + 'px';
+        
+        // Highlight Target
+        // Hide clone temporarily to get element underneath? 
+        // pointer-events: none on clone handles this.
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        const charCard = target ? target.closest('.character-card-container') : null;
+        
+        document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
+        if (charCard) {
+            charCard.classList.add('drag-target-active');
+        }
+    };
+    
+    // 4. End Listener
+    const endHandler = (e) => {
+        document.removeEventListener('touchmove', moveHandler);
+        document.removeEventListener('touchend', endHandler);
+        
+        const t = e.changedTouches[0];
+        const target = document.elementFromPoint(t.clientX, t.clientY);
+        const charCard = target ? target.closest('.character-card-container') : null;
+        
+        let success = false;
+        
+        if (charCard && charCard.dataset.charId) {
+            // Success Drop
+            moveCardFromDeckToChar(cardData.uniqueId.toString(), charCard.dataset.charId);
+            showToast(`已装备狂气给 ${charCard.querySelector('.char-name').textContent}`);
+            success = true;
+        }
+        
+        if (success) {
+            clone.remove();
+            // Do not reopen drawer automatically on success
+        } else {
+            // Fail/Cancel Animation
+            clone.style.transition = 'all 0.2s ease-in';
+            clone.style.opacity = '0';
+            clone.style.transform = 'scale(0.5)';
+            setTimeout(() => clone.remove(), 200);
+            
+            // Restore Drawer (Deck Content)
+            if (deckContentColumn) deckContentColumn.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+        }
+        
+        document.body.classList.remove('dragging-active');
+        document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
+    };
+    
+    document.addEventListener('touchmove', moveHandler, { passive: false });
+    document.addEventListener('touchend', endHandler);
+}
