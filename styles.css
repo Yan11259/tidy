@@ -1448,6 +1448,8 @@ h1, h2, h3, h4 {
     position: relative;
     transition: all 0.2s;
     flex-shrink: 0;
+    user-select: none; /* Prevent text selection for drag */
+    -webkit-user-select: none;
 }
 
 .card-title { 
