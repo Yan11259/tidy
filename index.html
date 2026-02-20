@@ -42,21 +42,31 @@
                 </button>
             </div>
 
-            <!-- Mobile Header Content -->
-            <div class="mobile-header-content mobile-only">
-                <button id="mobile-back-btn" class="icon-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M15 18l-6-6 6-6"/>
-                    </svg>
-                </button>
-                <h1 class="mobile-title">狂气管理</h1>
-                <button id="mobile-more-btn" class="icon-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="1"/>
-                        <circle cx="19" cy="12" r="1"/>
-                        <circle cx="5" cy="12" r="1"/>
-                    </svg>
-                </button>
+            <!-- Mobile Header Content (PC-like) -->
+            <div class="mobile-header-content mobile-only" style="display: none;">
+                <!-- Big Format Toggle (Checkbox Style) -->
+                <label class="mobile-toggle-label" title="切换大判">
+                    <input type="checkbox" id="big-format-toggle-mobile" class="mobile-toggle-checkbox">
+                    大判
+                </label>
+
+                <!-- Room Select (Grow) -->
+                <select id="mobile-room-select" class="nav-select">
+                    <option value="">-- 房间 --</option>
+                </select>
+
+                <!-- Right Actions -->
+                <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                    <!-- Create Room -->
+                    <button id="mobile-create-room-btn" class="nav-action-btn nav-btn-primary" style="width: 32px; height: 32px; padding: 0;" title="新建房间">
+                        <span style="font-size: 18px; line-height: 1;">+</span>
+                    </button>
+                    
+                    <!-- Delete Room -->
+                    <button id="mobile-delete-room-btn" class="nav-action-btn nav-btn-danger" style="width: 32px; height: 32px; padding: 0;" title="删除">
+                        ✕
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -89,17 +99,12 @@
                     <div class="panel-header unified-header">
                         <h3>牌堆内容</h3>
                         <div style="display:flex; gap:0.5rem; align-items: center;">
-                            <button id="library-toggle-btn" class="library-toggle-btn" title="狂气库">
+                            <button id="mobile-deck-close-btn" class="icon-btn mobile-only" style="border:none; font-size:1.2rem; margin-right: 4px;">✕</button>
+                            <button id="library-toggle-btn" class="library-toggle-btn desktop-only" title="狂气库">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                                 </svg>
-                            </button>
-                            <button id="shuffle-deck-btn" class="btn-primary-blue compact-btn">
-                                洗牌
-                            </button>
-                            <button id="clear-deck-btn" class="btn-danger-red compact-btn">
-                                清空
                             </button>
                         </div>
                     </div>
@@ -119,15 +124,18 @@
                     <div class="panel-header unified-header library-header">
                         <h3>狂气库</h3>
                         <div class="header-controls">
-                            <span id="library-mode-label" class="library-mode-label">平铺模式</span>
+                            <!-- Category Filter Moved Here -->
+                            <select id="category-filter" style="width: auto;">
+                                <option value="all">全部狂气</option>
+                            </select>
+                            
+                            <!-- Mode label removed -->
                             <button id="mobile-library-close-btn" class="icon-btn" style="display:none; border:none; font-size:1.2rem;">✕</button>
                         </div>
                     </div>
                     
                     <div class="filter-box">
-                        <select id="category-filter" style="width: 100%;">
-                            <option value="all">全部狂气</option>
-                        </select>
+                        <!-- Category Select Moved Up -->
                         <input type="text" id="library-search-input" placeholder="搜索狂气..." style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
                     </div>
 
@@ -142,22 +150,52 @@
                 <!-- 右侧：3D 牌堆 (3D Deck) -->
                 <div id="deck-3d-column" class="deck-3d-column resizable-panel" style="flex: 0 0 320px;">
                     <div class="deck-pile-panel">
-                        <div class="deck-3d-area">
-                            <div id="deck-3d-stack" class="deck-stack" title="点击抽卡 (优先发给选中角色)">
-                                <div class="deck-top-card">
-                                    <!-- No text -->
+                        <!-- Mobile Split Layout Container -->
+                        <div class="deck-preview-split-layout">
+                            <!-- Left: 3D Stack -->
+                            <div class="deck-3d-area">
+                                <div id="deck-3d-stack" class="deck-stack" title="点击抽卡 (优先发给选中角色)">
+                                    <div class="deck-top-card">
+                                        <!-- No text -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mobile Controls (Below Deck) -->
+                            <div class="deck-control-buttons mobile-only" style="display:flex; gap:10px; margin-bottom:10px; z-index:20; width: 80%; justify-content: center;">
+                                <button id="shuffle-deck-btn-mobile" class="btn-primary-blue compact-btn" style="box-shadow: 0 2px 4px rgba(0,0,0,0.2); flex: 1;">
+                                    洗牌
+                                </button>
+                                <button id="clear-deck-btn-mobile" class="btn-danger-red compact-btn" style="box-shadow: 0 2px 4px rgba(0,0,0,0.2); flex: 1;">
+                                    清空
+                                </button>
+                            </div>
+
+                            <!-- Right: Info & Controls -->
+                            <div class="deck-preview-right-col">
+                                <div class="deck-info-section">
+                                    <p class="deck-count-text">
+                                        牌堆数量
+                                        <span id="deck-count" class="deck-count-number">0</span>
+                                    </p>
+                                    <button id="add-random-btn">随机加入</button>
+                                    <!-- Controls (PC Only) -->
+                                    <div class="deck-control-buttons desktop-only" style="display:flex; gap:10px; margin-top:10px;">
+                                        <button id="shuffle-deck-btn" class="btn-primary-blue compact-btn" style="box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                            洗牌
+                                        </button>
+                                        <button id="clear-deck-btn" class="btn-danger-red compact-btn" style="box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                            清空
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mobile Session Info Embed (Transparent) -->
+                                <div id="mobile-session-info-embed" class="mobile-session-info-embed mobile-only">
+                                    <!-- Content mirrored from session info -->
                                 </div>
                             </div>
                         </div>
-
-                        <div class="deck-info-section">
-                            <p class="deck-count-text">
-                                牌堆数量
-                                <span id="deck-count" class="deck-count-number">0</span>
-                            </p>
-                            <button id="add-random-btn">随机加入</button>
-                        </div>
-
 
                         <!-- Hidden tools for JS compatibility (values read from modal) -->
                         <div class="random-tools" style="display:none">
@@ -182,11 +220,22 @@
         <!-- Bottom Navigation (Mobile Only) -->
         <nav class="bottom-nav">
             <button id="mobile-nav-deck" class="nav-item">
-                <span class="icon">🎴</span>
+                <span class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                </span>
                 <span class="label">牌堆内容</span>
             </button>
             <button id="mobile-nav-library" class="nav-item">
-                <span class="icon">📚</span>
+                <span class="icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                </span>
                 <span class="label">狂气库</span>
             </button>
         </nav>
@@ -199,6 +248,17 @@
             <div class="modal-actions">
                 <button id="modal-cancel-btn" class="nav-action-btn nav-btn-text">取消</button>
                 <button id="modal-confirm-btn" class="nav-action-btn nav-btn-primary">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="create-room-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>新建房间</h3>
+            <input type="text" id="create-room-modal-input" placeholder="请输入房间名称">
+            <div class="modal-actions">
+                <button id="create-room-modal-cancel" class="nav-action-btn nav-btn-text">取消</button>
+                <button id="create-room-modal-confirm" class="nav-action-btn nav-btn-primary">确定</button>
             </div>
         </div>
     </div>
@@ -299,6 +359,15 @@
                 <button id="dialog-cancel-btn" style="border: 1px solid #d1d5db; background: white; color: #374151;">取消</button>
                 <button id="dialog-confirm-btn" style="background: #111827; color: white;">确认</button>
             </div>
+        </div>
+    </div>
+
+    <div id="card-preview-modal" class="modal hidden" style="align-items: center; justify-content: center;">
+        <div class="modal-content" style="padding: 0; background: transparent; box-shadow: none; width: auto; max-width: 90vw;">
+            <div id="card-preview-container" style="position: relative; width: 60vh; max-width: 80vw; aspect-ratio: 2/3; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+                <!-- Content injected by JS -->
+            </div>
+            <button id="card-preview-close-btn" style="position: absolute; top: -40px; right: 0; color: white; background: rgba(0,0,0,0.5); border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; cursor: pointer;">✕</button>
         </div>
     </div>
 
