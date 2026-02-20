@@ -516,25 +516,31 @@ h1, h2, h3, h4 {
 
 /* Header Buttons */
 .btn-primary-blue {
-    background: #2563eb; /* blue-600 */
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
     color: white;
     border: none;
     border-radius: var(--radius-md);
     padding: 0.5rem 1rem;
-    font-size: 0.875rem; /* text-sm */
+    font-size: 0.875rem; 
     font-weight: 500;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 .btn-primary-blue:hover {
-    background: #1d4ed8; /* blue-700 */
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.4);
+}
+.btn-primary-blue:active {
+    transform: translateY(0);
 }
 
 .btn-danger-red {
-    background: #dc2626; /* red-600 */
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
     color: white;
     border: none;
     border-radius: var(--radius-md);
@@ -543,10 +549,16 @@ h1, h2, h3, h4 {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
 }
 .btn-danger-red:hover {
-    background: #b91c1c; /* red-700 */
+    background: linear-gradient(135deg, #b91c1c, #991b1b);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(220, 38, 38, 0.4);
+}
+.btn-danger-red:active {
+    transform: translateY(0);
 }
 
 /* Header Select */
@@ -813,32 +825,33 @@ h1, h2, h3, h4 {
 }
 
 .char-mini-card {
-    width: 64px; /* Reduced ~10% from 70px */
-    height: 90px; /* Reduced ~10% from 98px */
-    border-radius: 4px;
-    cursor: pointer;
-    position: relative;
-    box-shadow: var(--shadow-sm);
-    transition: transform 0.2s;
-    border: 1px solid var(--gray-200);
-}
+        width: 60px; /* Adjusted for 2:3 ratio (60x90) */
+        height: 90px;
+        aspect-ratio: 2/3;
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s;
+        border: 1px solid var(--gray-200);
+    }
 
-.char-mini-card.revealed {
-    background: white;
-    border: 1px solid #ccc;
-    font-size: 16px; /* Increased from 12px (+4px, approx 3 sizes) */
-    font-weight: 900; /* Bold Name */
-    font-family: 'Arial Black', 'Heiti SC', 'Microsoft YaHei UI', sans-serif; /* Match bold style */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 4px;
-    color: #333;
-    line-height: 1.1;
-    overflow-y: auto; /* Allow scroll if too long */
-    word-break: break-word; /* Ensure wrapping */
-}
+    .char-mini-card.revealed {
+        background: white;
+        border: 1px solid #ccc;
+        font-size: 16px; 
+        font-weight: 900; 
+        font-family: 'Arial Black', 'Heiti SC', 'Microsoft YaHei UI', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 4px;
+        color: #333;
+        line-height: 1.1;
+        overflow-y: auto;
+        word-break: break-word;
+    }
 
 .char-mini-card.revealed::-webkit-scrollbar {
     width: 2px;
@@ -944,6 +957,7 @@ h1, h2, h3, h4 {
     box-shadow: inset 0 0 40px rgba(0,0,0,0.6); /* Deeper shadow */
 }
 
+/* --- Deck Pile Panel (Desktop Default) --- */
 .deck-pile-panel {
     flex: 1;
     width: 100%;
@@ -951,12 +965,30 @@ h1, h2, h3, h4 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center; /* Vertically Center */
-    padding-top: 0; /* Remove top padding */
+    justify-content: center;
+    padding-top: 0;
     position: relative;
     background: transparent;
     perspective: 1000px;
 }
+
+.deck-preview-split-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column; /* Desktop: Stack vertically */
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.deck-preview-right-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem; /* Reduced from 1rem */
+        width: 100%;
+    }
 
 /* Ensure 3D area is visible */
 .deck-3d-area {
@@ -964,20 +996,75 @@ h1, h2, h3, h4 {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* min-height removed or adjusted */
     flex: 0 0 auto;
     z-index: 10;
 }
 
-/* Deck Info Section (Count + Random Btn) */
-.deck-info-section {
-    display: flex;
-    flex-direction: column; /* Stack vertically */
-    gap: 1.5rem; /* Space between count and button */
-    align-items: center;
-    margin-top: 2rem;
-    flex: 0 0 auto;
-}
+/* PC Button Alignment & Layout */
+    .deck-control-buttons .btn-primary-blue,
+    .deck-control-buttons .btn-danger-red {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        line-height: 1.2;
+    }
+    
+    .deck-info-section {
+        gap: 0.75rem; /* Reduced Gap */
+    }
+
+    .deck-preview-split-layout {
+        padding-top: 40px; /* Move Down (Increased from 20px) */
+    }
+    
+    /* New Character Button (Internal) */
+    .add-char-card {
+        justify-content: center;
+        align-items: center;
+        background: white;
+        border: 2px dashed #d1d5db;
+        color: #9ca3af;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 48px; /* Compact height */
+        border-radius: 8px;
+        display: flex; /* Ensure flex */
+        width: 100%; /* Full width in list */
+    }
+    .add-char-card:hover {
+        border-color: var(--accent-blue);
+        color: var(--accent-blue);
+        background: #f9fafb;
+    }
+
+    /* Deck Info Section (Count + Random Btn) */
+    .deck-info-section {
+        display: flex;
+        flex-direction: column; /* Stack vertically */
+        gap: 0.5rem; /* Further reduced from 1.5rem/0.75rem */
+        align-items: center;
+        margin-top: 0; /* Removed margin-top as gap handles it */
+        flex: 0 0 auto;
+        width: 220px; /* Fixed width for alignment */
+    }
+
+    #add-random-btn {
+        width: 100%; /* Full width of container */
+        /* ... existing styles ... */
+    }
+
+    .deck-control-buttons.desktop-only {
+        display: flex; 
+        gap: 4px; /* Reduced gap */
+        margin-top: 4px; /* Reduced margin */
+        width: 100%; /* Full width */
+    }
+
+    .deck-control-buttons.desktop-only button {
+        flex: 1; /* Equal width */
+    }
 
 .deck-count-text {
     font-size: 1rem; 
@@ -1013,6 +1100,7 @@ h1, h2, h3, h4 {
     cursor: pointer;
     transform-style: preserve-3d;
     transition: transform 0.1s;
+    will-change: transform; /* Optimize for animation */
 }
 
 /* Deck Layers (3D Effect) */
@@ -1024,20 +1112,19 @@ h1, h2, h3, h4 {
     background-size: cover;
     background-position: center;
     border-radius: 6px; /* Chamfered-ish edges */
+    will-change: transform; /* Optimize for animation */
     
-    /* 3D Thickness Simulation */
+    /* Realistic 3D Shadow */
     box-shadow: 
-        inset 0 0 0 1px rgba(255,255,255,0.1),
-        inset 0 -1px 0 rgba(0,0,0,0.1),
-        0.5px 0.5px 0 #bbb,
-        1px 1px 0 #aaa,
-        1.5px 1.5px 0 #999,
-        2px 2px 4px rgba(0,0,0,0.2);
-    border: 1px solid rgba(0,0,0,0.15);
+        1px 1px 2px rgba(0,0,0,0.3), /* Key light shadow */
+        0 0 1px rgba(0,0,0,0.5), /* Ambient occlusion */
+        inset 0 0 0 1px rgba(255,255,255,0.1); /* Edge highlight */
+    border: 1px solid rgba(0,0,0,0.2);
 }
 
 /* Top Card Special Styling */
 .deck-top-card {
+    /* ... positioning ... */
     position: absolute;
     width: 100%;
     height: 100%;
@@ -1049,18 +1136,15 @@ h1, h2, h3, h4 {
     justify-content: center;
     align-items: center;
     
-    /* 3D Thickness Simulation for Top Card */
+    /* Top Card Shadow - Floating slightly */
     box-shadow: 
-        inset 0 0 0 1px rgba(255,255,255,0.1),
-        inset 0 -1px 0 rgba(0,0,0,0.1),
-        0.5px 0.5px 0 #bbb,
-        1px 1px 0 #aaa,
-        1.5px 1.5px 0 #999,
-        0 4px 8px rgba(0,0,0,0.2);
+        0 4px 10px rgba(0,0,0,0.4), /* Drop shadow */
+        0 1px 3px rgba(0,0,0,0.2), /* Closer shadow */
+        inset 0 0 0 1px rgba(255,255,255,0.2); /* Edge highlight */
         
     z-index: 200; /* Ensure on top */
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
     pointer-events: none;
 }
 
@@ -1365,9 +1449,9 @@ h1, h2, h3, h4 {
 .card-title { 
     font-weight: 500; /* Font weight 500 */
     text-align: center; 
-    margin-bottom: 8px; /* 0.5em based on 16px */
+    margin-bottom: 2px; /* Reduced from 8px to bring English name closer */
     font-size: 16px; /* 16px */
-    line-height: 1.5; /* Line height 1.5 */
+    line-height: 1.2; /* Reduced line height */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; /* System Sans-serif Stack */
     letter-spacing: normal; /* Reset letter spacing */
 }
@@ -1378,7 +1462,8 @@ h1, h2, h3, h4 {
     color: var(--gray-500);
     text-align: center; /* Center english */
     border-bottom: none;
-    margin-bottom: 4px; /* mb-1 */
+    margin-bottom: 8px; /* Increased from 4px to separate from content */
+    margin-top: 0;
     padding-bottom: 0;
     line-height: 1; /* Reduce line height */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
@@ -1408,58 +1493,65 @@ h1, h2, h3, h4 {
 
 /* Deck Grid Specifics - Match Library Style */
 .deck-grid .card {
-    /* Match dimensions and font of Library cards (compact/standard) */
-    width: 160px;
-    height: 224px;
-    font-size: 14px; /* Match Library */
-    margin-bottom: 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    transform: none;
-}
+        /* Match dimensions and font of Library cards (compact/standard) */
+        width: 160px;
+        height: 224px;
+        font-size: 14px; /* Match Library */
+        margin-bottom: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Softer shadow */
+        transform: none;
+        border: 1px solid #e5e7eb; /* Soft border instead of black */
+        border-radius: 8px; /* Rounded corners */
+        background: #fff;
+        /* Ensure content layout is card-like */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow: visible !important; /* Allow drag handle to be visible */
+    }
 
 .deck-grid .card-title {
     font-size: 16px; /* Match Library */
-    font-weight: 500;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-    margin-bottom: 2px; /* Reduced from 8px for tighter spacing in deck list */
+    font-weight: 700;
+    font-family: var(--font-serif);
+    margin-bottom: 4px; 
     line-height: 1.2;
-}
-
-/* Removed conflicting .deck-grid .card-eng rule to allow global style to apply */
-
-.deck-grid .card-content-text {
-    font-size: 13px; /* Match Library */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-    margin-bottom: 8px;
-}
-
-.deck-grid .card-label {
-    font-size: 12px; /* Match Library */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    text-align: center;
+    border-bottom: 1px solid #f3f4f6; /* Soft separator */
+    padding-bottom: 4px;
 }
 
 /* Drag Handle */
 .drag-handle {
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 20px;
-    height: 20px;
-    background: rgba(0,0,0,0.1);
-    border-radius: 4px;
+    top: 0;
+    left: 0;
+    width: 40px; /* Larger hit area */
+    height: 40px;
+    background: linear-gradient(135deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 50%); /* Subtle corner gradient */
+    border-radius: 8px 0 20px 0;
     cursor: grab;
-    display: none; /* Hidden by default */
-    justify-content: center;
-    align-items: center;
+    display: flex; /* Always show for easier discovery */
+    justify-content: flex-start;
+    align-items: flex-start;
+    padding: 4px;
     z-index: 20;
-    font-size: 12px;
-    color: #555;
+    font-size: 14px;
+    color: #666;
+    opacity: 0.5;
+    transition: opacity 0.2s;
 }
-.drag-handle:hover {
-    background: rgba(0,0,0,0.2);
+.drag-handle::before {
+    content: '✥'; /* Drag icon */
+    font-size: 16px;
+    line-height: 1;
+}
+.drag-handle:hover, .drag-handle:active {
+    background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 60%);
+    opacity: 1;
 }
 .card:hover .drag-handle {
-    display: flex; /* Show on hover */
+    display: flex; 
 }
 
 .card.dragging {
@@ -1467,27 +1559,81 @@ h1, h2, h3, h4 {
     border: 2px dashed #999;
 }
 
-/* Card Close Button (X) */
+/* Drag Over Indicators - Refined */
+.card.drag-over-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -4px;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-blue);
+    z-index: 100;
+    border-radius: 4px;
+}
+
+.card.drag-over-right::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -4px;
+    width: 4px;
+    height: 100%;
+    background: var(--accent-blue);
+    z-index: 100;
+    border-radius: 4px;
+}
+
+/* Remove Border Logic to prevent layout shift */
+.card.drag-over-left {
+    /* border-left: 4px solid var(--accent-blue) !important; */
+    /* padding-left: calc(0.5rem - 4px); */
+    transform: translateX(4px); /* Slight nudge */
+    transition: transform 0.1s;
+}
+
+.card.drag-over-right {
+    /* border-right: 4px solid var(--accent-blue) !important; */
+    /* padding-right: calc(1rem - 4px); */
+    transform: translateX(-4px); /* Slight nudge */
+    transition: transform 0.1s;
+}
+
+/* Ensure relative positioning for pseudo elements */
+.card {
+    position: relative;
+}
+
+/* Also ensure deck grid cards handle this gracefully */
+.deck-grid .card.drag-over-left,
+.deck-grid .card.drag-over-right {
+    border: 1px solid #e5e7eb !important; /* Keep original border */
+}
+
 .card-close-btn {
     position: absolute;
     top: 2px;
     right: 2px;
     width: 20px;
     height: 20px;
-    background: rgba(192, 57, 43, 0.8);
-    color: white;
+    background: white; 
+    color: #999; 
+    border: none; 
     border-radius: 50%;
     cursor: pointer;
-    display: none; /* Hidden by default */
+    display: none; 
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    font-size: 14px;
+    font-size: 16px; 
     z-index: 25;
-    line-height: 1;
+    line-height: 0; 
+    padding: 0; /* Reset padding */
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 .card-close-btn:hover {
-    background: rgba(192, 57, 43, 1);
+    background: #fee2e2; 
+    color: #dc2626;
 }
 .card:hover .card-close-btn {
     display: flex; /* Show on hover */
@@ -1592,7 +1738,7 @@ h1, h2, h3, h4 {
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.4);
     backdrop-filter: blur(4px); /* Blur effect */
-    z-index: 2000;
+    z-index: 5000; /* Increased to be above header (4000) */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1679,7 +1825,7 @@ h1, h2, h3, h4 {
     border: 1px solid #ccc;
     box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
     border-radius: 4px;
-    z-index: 3000;
+    z-index: 6000; /* Highest priority */
     padding: 5px 0;
     min-width: 120px;
 }
@@ -1820,6 +1966,30 @@ h1, h2, h3, h4 {
 
 /* Mobile Adaptation */
 @media (max-width: 768px) {
+    /* ... existing styles ... */
+    
+    /* Auto-scroll zones */
+    .scroll-zone {
+        position: fixed;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        z-index: 9999;
+        pointer-events: none;
+        display: none;
+    }
+    .scroll-zone.active {
+        display: block;
+    }
+    .scroll-zone-top {
+        top: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.2), transparent);
+    }
+    .scroll-zone-bottom {
+        bottom: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.2), transparent);
+    }
+
     /* Global Layout Reset */
     body {
         overscroll-behavior: none; /* Prevent bounce effect on body */
@@ -1851,15 +2021,16 @@ h1, h2, h3, h4 {
         right: 0;
         height: calc(56px + env(safe-area-inset-top));
         padding-top: env(safe-area-inset-top);
-        padding-left: 16px;
-        padding-right: 16px;
-        z-index: 4000; /* Increased to be above drawers (3000) */
+        padding-left: 8px; /* Reduced padding */
+        padding-right: 8px;
+        z-index: 4000;
         background: rgba(255, 255, 255, 0.95) !important; 
         backdrop-filter: blur(10px);
-        box-shadow: 0 0 0 rgba(0,0,0,0); 
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
         transition: box-shadow 0.3s;
         flex-wrap: nowrap;
         justify-content: space-between;
+        align-items: center; /* Ensure vertical center */
     }
     
     .app-header.scrolled {
@@ -1868,20 +2039,19 @@ h1, h2, h3, h4 {
 
     /* Adjust Header Elements */
     .header-left h1 {
-        font-size: 18px;
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        display: none; /* Hide default title on mobile to save space for controls */
     }
     
     .header-center {
-        gap: 8px;
+        display: none; /* Hide desktop center controls */
     }
 
     /* 1. Character Column (Top 30%) */
     .character-column {
-        flex: 0 0 30vh !important;
+        flex: 0 0 auto !important; /* Allow auto height */
+        height: 150px; /* Fixed height for mobile - Increased to show full row + scroll */
+        min-height: 150px; 
+        max-height: 150px;
         width: 100% !important;
         order: 1;
         border-bottom: 1px solid var(--gray-200);
@@ -1889,59 +2059,280 @@ h1, h2, h3, h4 {
         overflow: hidden; /* Manage scroll internally */
         display: flex;
         flex-direction: column;
+        z-index: 10; /* Ensure visible */
+        position: relative;
     }
 
     .character-list-vertical {
-        flex-direction: row;
+        flex: 1; /* Ensure it fills the column */
+        flex-direction: row; /* Horizontal Scroll */
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0 16px;
+        padding: 8px 16px;
         gap: 12px;
-        align-items: center;
+        align-items: flex-start; /* Align top */
         height: 100%;
+        width: 100%;
         -webkit-overflow-scrolling: touch; /* Inertia scroll */
+        display: flex; /* Ensure flex */
     }
 
     .character-card-container {
-        width: 260px; /* Wider for mobile horizontal view */
-        height: 90%;
+        width: 220px; /* Reduced width for better fit */
+        height: 100%; /* Fill the column height */
+        min-height: 100%;
         flex-shrink: 0;
         margin-bottom: 0;
-    }
-    
-    /* Hide header in char column to save space? Or keep it? */
-    .character-column .panel-header {
-        display: none; /* Hide title bar to maximize space */
+        overflow-y: hidden; /* Hide internal scroll */
+        background: white; /* Ensure bg */
+        opacity: 1; /* Ensure opacity */
+        display: flex;
+        flex-direction: column;
     }
 
-    /* 2. 3D Deck Preview (Remaining Space) */
+    /* Add Character Card Style */
+    .add-char-card {
+        justify-content: center;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.5);
+        border: 2px dashed #ccc;
+        color: #999;
+        font-size: 3rem;
+        cursor: pointer;
+        width: 60px !important; /* Narrow button */
+    }
+
+    .add-char-card:active {
+        background: rgba(0, 0, 0, 0.05);
+        color: #666;
+    }
+
+    /* Mobile Char Card Layout Optimization */
+    .character-card-container .char-header-section {
+        min-height: 40px; /* Compress header */
+        padding: 4px;
+    }
+    
+    .character-card-container .char-avatar-container {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .character-card-container .avatar-emoji {
+        font-size: 16px;
+    }
+    
+    .character-card-container .char-name {
+        font-size: 0.8rem;
+    }
+    
+    .character-card-container .char-hand-section {
+        flex: 1; /* Fill remaining space */
+        padding: 2px 4px; /* Reduced top/bottom padding */
+        overflow-y: auto; /* Scroll hand if too many cards */
+        margin-top: 0; /* Ensure no extra margin */
+    }
+    
+    .character-card-container .char-hand-grid-inner {
+        gap: 4px;
+    }
+    
+    .character-card-container .char-mini-card {
+        width: 44px; /* Mobile: 44x66 (2:3) */
+        height: 66px;
+    }
+    
+    /* Empty State for Character List */
+    .character-list-empty-state {
+        display: none; /* Hide text, rely on add button */
+    }
+    
+    /* Hide header in char column to save space */
+    .character-column .panel-header {
+        display: none; 
+    }
+
+    .character-list-empty-state {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #999;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    /* 2. 3D Deck Preview (Remaining Space) - Split Layout */
     .deck-3d-column {
         flex: 1 !important; /* Occupy remaining vertical space */
         order: 2;
         width: 100% !important;
         height: auto !important; /* Reset fixed height */
         background-attachment: scroll; /* Fix for mobile bg */
+        overflow: hidden; /* Hide overflow */
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0; /* Removed extra padding as main-content handles nav space */
+    }
+
+    .deck-pile-panel {
+        padding: 10px;
+        display: block; /* Reset flex */
+        height: 100%;
+        width: 100%;
+        overflow-y: auto; /* Enable scrolling for the panel content */
+    }
+
+    .deck-preview-split-layout {
+        display: flex;
+        flex-direction: column; /* Changed from row to column for vertical stacking */
+        width: 100%;
+        min-height: 100%; /* Ensure it fills at least the container */
+        align-items: center; /* Center items */
+        justify-content: flex-start;
+        gap: 10px;
+        /* overflow-y handled by deck-pile-panel */
+    }
+
+    /* Top: 3D Stack */
+    .deck-3d-area {
+        flex: 0 0 auto; /* Do not flex, auto height */
+        width: 100%;
+        height: 280px; /* Fixed height for 3D area */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding-top: 20px;
+        z-index: 10;
+    }
+
+    #deck-3d-stack {
+        transform: scale(0.8); /* Scale down slightly */
+        margin-top: 0;
+    }
+
+    /* Bottom Container: Info & Session */
+    .deck-preview-right-col {
+        flex: 1; /* Fill remaining space */
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 16px;
+        padding: 0 16px 20px 16px;
+        position: relative;
+    }
+
+    /* Deck Info: Count & Random Btn */
+    .deck-info-section {
+        width: 100%;
+        display: flex;
+        flex-direction: row; /* Horizontal layout for count and button */
+        justify-content: space-around;
+        align-items: center;
+        margin-top: 0;
+        gap: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        max-width: none; /* Override desktop width restriction if inherited */
+    }
+
+    .deck-count-text {
+        font-size: 0.9rem;
+        flex-direction: row; /* Horizontal */
+        gap: 8px;
+        align-items: baseline;
+    }
+    
+    .deck-count-number {
+        font-size: 1.5rem;
+    }
+
+    #add-random-btn {
+        width: auto;
+        padding: 6px 16px;
+        font-size: 0.9rem;
+    }
+
+    /* Session Info Embed */
+    .mobile-session-info-embed {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        background: rgba(0,0,0,0.2); /* Semi-transparent bg */
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        padding: 12px;
+        color: white;
+        font-size: 0.8rem;
+        /* text-shadow: 0 1px 2px rgba(0,0,0,0.8); Removed Shadow */
+        min-height: 100px;
+        max-height: 300px; /* Limit height */
+        overflow-y: auto;
+        flex-shrink: 0; /* Prevent shrinking */
+        margin-bottom: 20px; /* Ensure space below */
+    }
+
+    #mobile-room-select {
+        max-width: 120px !important;
+    }
+    
+    /* Override session info styles for embed */
+    .mobile-session-info-embed .info-item {
+        background: rgba(0,0,0,0.3);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .mobile-session-info-embed .char-hand-item-wrapper {
+        background: rgba(0,0,0,0.3) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        color: white;
+    }
+    
+    .mobile-session-info-embed .char-hand-header {
+        background: transparent !important;
+        color: white;
+    }
+    
+    .mobile-session-info-embed .char-name-compact {
+        color: white;
+    }
+    
+    .mobile-session-info-embed .hidden {
+        display: none;
     }
 
     /* 3. Drawers (Deck Content & Library) */
     .deck-content-column,
     .library-section {
         position: fixed;
-        top: 0;
+        bottom: 0; /* Changed from top: 0 to bottom: 0 */
         left: 0;
         width: 100% !important;
-        height: 100% !important;
-        z-index: 3000;
+        height: 60vh !important; /* Limit height to 60vh to not cover character list completely */
+        top: auto; /* Reset top */
+        z-index: 1500;
         transform: translateY(100%);
         transition: transform 300ms ease-out;
         flex: none !important;
-        padding-top: calc(56px + env(safe-area-inset-top)); /* Make space for header */
+        padding-top: 0; /* Reset top padding */
+        padding-bottom: calc(64px + env(safe-area-inset-bottom)); /* Only bottom padding needed */
         background: white;
+        visibility: hidden;
+        display: flex;
+        flex-direction: column;
+        border-radius: 16px 16px 0 0; /* Rounded top corners */
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
     }
 
     .deck-content-column.active,
     .library-section.active {
         transform: translateY(0);
+        visibility: visible;
         display: flex !important; /* Override hidden */
     }
     
@@ -1950,35 +2341,40 @@ h1, h2, h3, h4 {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6);
-        z-index: 2999;
+        z-index: 1400; /* Below Drawer (1500) */
         opacity: 0;
         pointer-events: none;
-        transition: opacity 300ms;
+        transition: opacity 300ms, visibility 0s 300ms;
+        visibility: hidden;
     }
     
     .drawer-backdrop.active {
         opacity: 1;
         pointer-events: auto;
+        visibility: visible;
+        transition: opacity 300ms, visibility 0s 0s;
     }
 
     /* Hide Resizers */
     .resizer { display: none !important; }
 
-    /* Bottom Navigation */
+    /* Bottom Navigation - Improved Aesthetics */
     .bottom-nav {
-        display: flex;
+        display: flex !important; /* Force Flex */
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
         height: calc(64px + env(safe-area-inset-bottom));
         padding-bottom: env(safe-area-inset-bottom);
-        background: rgba(255, 255, 255, 0.95);
-        border-top: 1px solid #eee;
+        background: rgba(255, 255, 255, 0.9);
+        border-top: 1px solid rgba(255,255,255,0.5);
         z-index: 2000;
-        justify-content: space-around;
+        justify-content: space-evenly;
         align-items: center;
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        gap: 0;
     }
 
     .nav-item {
@@ -1990,17 +2386,32 @@ h1, h2, h3, h4 {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 4px;
-        color: #666;
-        font-size: 12px;
+        gap: 2px;
+        color: #888; /* Inactive color */
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .nav-item.active {
+        color: var(--primary);
+        background: rgba(0,0,0,0.05);
     }
 
     .nav-item .icon {
         font-size: 24px;
+        margin-bottom: 2px;
+        filter: grayscale(100%);
+        transition: filter 0.2s;
+    }
+    
+    .nav-item:active .icon,
+    .nav-item.active .icon {
+        filter: grayscale(0%);
     }
     
     .nav-item:active {
-        background: rgba(0,0,0,0.05);
+        transform: scale(0.95);
     }
 
     /* Drag & Drop Highlighting */
@@ -2343,36 +2754,135 @@ h1, h2, h3, h4 {
         display: none !important;
     }
     
-    /* Mobile Header Styling */
+    /* Mobile Header Layout */
     .mobile-header-content {
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
         height: 100%;
+        padding: 0 8px;
     }
     
-    .mobile-title {
-        font-size: 18px;
-        font-weight: 500;
-        margin: 0;
-        color: inherit;
+    /* Room Select - Right Aligned */
+    #mobile-room-select {
+        flex: 0 1 auto !important; /* Don't grow too much */
+        width: 120px;
+        margin-left: auto; /* Push to right */
+        margin-right: 8px;
     }
-    
-    .mobile-header-content .icon-btn {
-        width: 48px; /* Touch target size */
-        height: 48px;
-        padding: 12px;
-        border: none;
-        background: transparent;
-        color: inherit;
+
+    /* Big Format Toggle - Match PC Style */
+    .mobile-toggle-label {
         display: flex;
-        justify-content: center;
         align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #333; /* Ensure visible color */
+        cursor: pointer;
+        padding: 0 8px;
+        height: 28px;
+        background: transparent;
+        border-radius: 4px;
+        border: 1px solid transparent;
+        flex-shrink: 0; /* Prevent text clipping */
     }
     
-    .mobile-header-content .icon-btn:active {
-        background: rgba(0,0,0,0.05);
+    /* Ensure text is visible in dark header override if applicable */
+    .app-header .mobile-toggle-label {
+        color: inherit; /* Inherit header text color */
+    }
+
+    .mobile-toggle-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--primary);
+    }
+
+    /* Unify Header Button Heights */
+    .app-header .nav-action-btn,
+    .app-header button,
+    #mobile-room-select,
+    .mobile-toggle-label {
+        height: 28px !important; /* Unified height */
+        min-height: 28px !important;
+        padding: 0 8px !important;
+        font-size: 13px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Specific adjustment for select to align text */
+    #mobile-room-select {
+        padding-right: 24px !important; /* Space for arrow */
+    }
+
+    /* Delete Character Button - Icon Only on Mobile */
+    .delete-char-btn::after {
+        content: ""; /* No text on mobile */
+    }
+    .delete-char-btn {
+        padding: 6px; /* Square-ish */
+        top: 6px;
+        right: 6px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 4px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Deck Card Controls - Mobile */
+    .card-close-btn {
+        top: 2px; /* Inside edge */
+        right: 2px;
+        width: 24px;
+        height: 24px;
+        background: transparent; /* Transparent */
+        border: none;
+        border-radius: 0;
+        font-size: 20px;
+        color: #666;
+        opacity: 0.8;
+    }
+    .card-close-btn:hover {
+        background: transparent;
+        color: #000;
+    }
+    
+    .drag-handle {
+        top: 2px; /* Inside edge */
+        left: 2px;
+        width: 32px;
+        height: 32px;
+        background: rgba(0,0,0,0.05); /* Subtle bg */
+        border-radius: 4px;
+    }
+
+    /* Session Info Margin */
+    .mobile-session-info-embed {
+        margin-bottom: 5px; /* Reduced from 10px */
+        width: 95%; /* Slightly reduce width to show edges */
+    }
+
+    /* Library Grid - 2 Columns on Mobile */
+    .library-grid.expanded-view {
+        grid-template-columns: repeat(2, 1fr) !important; /* Force 2 columns */
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    /* Library Header Controls */
+    .library-header .header-controls {
+        flex: 1;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+    
+    #category-filter {
+        width: auto !important; /* Auto width */
+        max-width: 120px;
+        height: 28px;
+        font-size: 12px;
     }
 }
 
@@ -2417,4 +2927,190 @@ body.dragging-active {
     touch-action: none;
 }
 
+/* --- Mobile Optimization & Touch Targets --- */
+@media (max-width: 768px) {
+    /* Global Touch Optimization */
+    button, 
+    .nav-item, 
+    .card, 
+    .character-card-container,
+    .nav-action-btn,
+    .icon-btn {
+        touch-action: manipulation; /* Removes 300ms delay */
+        -webkit-tap-highlight-color: transparent;
+        cursor: pointer;
+    }
 
+    /* Increase Touch Targets for Card Controls - Adjusted to keep inside */
+    .card-close-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        display: flex !important; 
+        opacity: 0.8;
+        z-index: 50;
+        /* Position handled in previous block */
+    }
+
+    .drag-handle {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        display: flex !important; 
+        justify-content: center; /* Center horizontally */
+        align-items: center; /* Center vertically */
+        padding: 0; /* Reset padding */
+        opacity: 0.6;
+        z-index: 50;
+    }
+
+    /* Improve Font Readability */
+    .card {
+        font-size: 12px; /* Minimum readable size */
+    }
+    
+    .card-title {
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .card-eng {
+        font-size: 10px;
+        margin-bottom: 8px; /* Match global adjustment */
+    }
+    
+    .card-content-text {
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    /* Button Sizing Compliance (44px min) */
+    .nav-action-btn, 
+    .icon-btn,
+    .nav-toggle-label {
+        min-height: 44px;
+        min-width: 44px;
+        padding: 8px 12px;
+    }
+    
+    /* Dialog & Modal Touch Friendly */
+    .modal-content {
+        width: 90%;
+        max-width: 360px;
+        padding: 24px; /* Larger padding */
+    }
+    
+    .modal-actions button {
+        min-height: 44px;
+        font-size: 16px;
+    }
+
+    /* Color Swatches Larger */
+    .color-swatch {
+        width: 40px;
+        height: 40px;
+        margin: 4px;
+    }
+
+    /* Context Menu Larger */
+    .context-menu {
+        min-width: 160px;
+    }
+    
+    .context-menu-item {
+        padding: 12px 20px; /* Larger hit area */
+        font-size: 14px;
+    }
+}
+
+
+/* Tablet Optimization (Landscape & Portrait) */
+@media (min-width: 768px) and (max-width: 1366px) {
+    #card-preview-container {
+        width: 60vh !important; /* Adjusted width relative to viewport height */
+        max-width: 500px !important;
+        aspect-ratio: 2/3;
+    }
+    #card-preview-container .card-title {
+        font-size: 36px !important; /* Larger Title */
+        margin-bottom: 10px !important;
+    }
+    #card-preview-container .card-content-text {
+        font-size: 24px !important; /* Larger Body Text */
+        line-height: 1.5 !important;
+    }
+    #card-preview-container .card-label {
+        font-size: 20px !important; /* Larger Labels */
+        padding: 6px !important;
+        margin-bottom: 8px !important;
+    }
+    #card-preview-container .card-eng {
+        font-size: 16px !important;
+        margin-bottom: 12px !important;
+    }
+}
+
+/* Card Preview Modal Override */
+#card-preview-container .card {
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    box-shadow: none;
+    padding: 24px;
+    font-size: 14px; /* Ensure readability */
+    display: flex;
+    flex-direction: column;
+}
+
+#card-preview-container .preview-header {
+        border-bottom: 2px solid #333;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        text-align: center;
+    }
+
+    #card-preview-container .card-title {
+        font-size: 24px;
+        font-weight: 900;
+        margin-bottom: 4px;
+        border-bottom: none; /* Removed border from title itself */
+        padding-bottom: 0;
+    }
+
+    #card-preview-container .card-eng {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 0;
+    }
+
+#card-preview-container .card-text {
+    font-size: 16px;
+    gap: 16px;
+    overflow-y: auto; /* Allow internal scroll if needed, but prefer fit */
+}
+
+#card-preview-container .card-label {
+    font-size: 14px;
+    background: #f3f4f6;
+    padding: 4px;
+    margin-bottom: 4px;
+}
+
+#card-preview-container .card-content-text {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+/* Hide unused elements in preview */
+.preview-card-content {
+    /* Legacy class cleanup */
+}
+
+/* Close button for modal handled inline in HTML for positioning outside */
+#card-preview-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
