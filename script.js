@@ -227,6 +227,9 @@ function init() {
             toggleBackdrop(false);
             if (deckContentColumn) deckContentColumn.classList.remove('active');
             if (librarySection) librarySection.classList.remove('active');
+            
+            if (mobileNavDeck) mobileNavDeck.classList.remove('active');
+            if (mobileNavLibrary) mobileNavLibrary.classList.remove('active');
         });
     }
 
@@ -237,17 +240,42 @@ function init() {
 
     if (mobileNavDeck) {
         mobileNavDeck.addEventListener('click', () => {
-            deckContentColumn.classList.add('active');
-            librarySection.classList.remove('active');
-            toggleBackdrop(true);
+            if (mobileNavDeck.classList.contains('active')) {
+                // Close if already active
+                deckContentColumn.classList.remove('active');
+                mobileNavDeck.classList.remove('active');
+                toggleBackdrop(false);
+            } else {
+                // Open
+                deckContentColumn.classList.add('active');
+                librarySection.classList.remove('active');
+                toggleBackdrop(true);
+                
+                mobileNavDeck.classList.add('active');
+                mobileNavLibrary.classList.remove('active');
+            }
         });
     }
 
     if (mobileNavLibrary) {
         mobileNavLibrary.addEventListener('click', () => {
-            librarySection.classList.add('active');
-            deckContentColumn.classList.remove('active');
-            toggleBackdrop(true);
+            if (mobileNavLibrary.classList.contains('active')) {
+                // Close if already active
+                librarySection.classList.remove('active');
+                mobileNavLibrary.classList.remove('active');
+                toggleBackdrop(false);
+            } else {
+                // Open
+                librarySection.classList.add('active');
+                deckContentColumn.classList.remove('active');
+                toggleBackdrop(true);
+
+                mobileNavLibrary.classList.add('active');
+                mobileNavDeck.classList.remove('active');
+                
+                // Force Tile Mode (Expanded) on Mobile
+                setLibraryMode(true);
+            }
         });
     }
 
@@ -285,30 +313,109 @@ function init() {
     initSessionInfo();
     
     // Mobile Header Logic
-    const mobileBackBtn = document.getElementById('mobile-back-btn');
-    if (mobileBackBtn) {
-        mobileBackBtn.addEventListener('click', () => {
-            const deckContent = document.getElementById('deck-content-column');
-            const library = document.getElementById('library-section');
-            let closed = false;
-            
-            if (deckContent && deckContent.classList.contains('active')) {
-                deckContent.classList.remove('active');
-                closed = true;
-            }
-            if (library && library.classList.contains('active')) {
-                library.classList.remove('active');
-                closed = true;
-            }
-            
-            if (closed) toggleBackdrop(false);
+    const mobileCreateBtn = document.getElementById('mobile-create-room-btn');
+    const mobileRoomSelect = document.getElementById('mobile-room-select');
+    // const mobileInfoBtn = document.getElementById('mobile-session-info-btn'); // Removed
+    const mobileDeleteBtn = document.getElementById('mobile-delete-room-btn');
+    const mobileBigFormatCheckbox = document.getElementById('big-format-toggle-mobile');
+
+    // Create Room Modal Elements
+    const createRoomModal = document.getElementById('create-room-modal');
+    const createRoomModalInput = document.getElementById('create-room-modal-input');
+    const createRoomModalConfirm = document.getElementById('create-room-modal-confirm');
+    const createRoomModalCancel = document.getElementById('create-room-modal-cancel');
+
+    if (mobileCreateBtn) {
+        mobileCreateBtn.addEventListener('click', () => {
+             createRoomModal.classList.remove('hidden');
+             createRoomModalInput.focus();
         });
     }
 
-    const mobileMoreBtn = document.getElementById('mobile-more-btn');
-    if (mobileMoreBtn) {
-        mobileMoreBtn.addEventListener('click', () => {
-            if (sessionInfoBtn) sessionInfoBtn.click();
+    if (createRoomModalCancel) {
+        createRoomModalCancel.addEventListener('click', () => {
+            createRoomModal.classList.add('hidden');
+        });
+    }
+
+    if (createRoomModalConfirm) {
+        createRoomModalConfirm.addEventListener('click', () => {
+            const roomName = createRoomModalInput.value.trim();
+            if (roomName) {
+                const newRoom = {
+                    id: Date.now().toString(),
+                    name: roomName,
+                    deck: [],
+                    characters: [] 
+                };
+                rooms.push(newRoom);
+                saveData();
+                updateRoomDropdown();
+                selectRoom(newRoom.id);
+                createRoomModalInput.value = '';
+                createRoomModal.classList.add('hidden');
+                showToast("房间已创建");
+            } else {
+                alert("请输入房间名");
+            }
+        });
+    }
+
+    if (mobileRoomSelect) {
+        mobileRoomSelect.addEventListener('change', (e) => {
+            if (e.target.value) selectRoom(e.target.value);
+        });
+    }
+
+    /*
+    if (mobileInfoBtn) {
+        mobileInfoBtn.addEventListener('click', () => {
+            sessionInfoBtn.click();
+        });
+    }
+    */
+
+    if (mobileDeleteBtn) {
+        mobileDeleteBtn.addEventListener('click', () => {
+            deleteRoomBtn.click();
+        });
+    }
+
+    if (mobileBigFormatCheckbox) {
+        // Sync initial state
+        mobileBigFormatCheckbox.checked = isBigFormat;
+
+        mobileBigFormatCheckbox.addEventListener('change', (e) => {
+            // Update state directly
+            isBigFormat = e.target.checked;
+            localStorage.setItem('insane_big_format', isBigFormat);
+            
+            // Sync PC toggle if exists
+            if (bigFormatToggle) bigFormatToggle.checked = isBigFormat;
+            
+            // Trigger updates
+            renderCategoryFilter();
+            renderMadnessCards();
+            const room = getCurrentRoom();
+            if (room) updateDeckVisuals(room);
+            populateRandomDialogCategories();
+        });
+        
+        // Ensure PC toggle also updates mobile checkbox
+        if (bigFormatToggle) {
+            bigFormatToggle.addEventListener('change', (e) => {
+                mobileBigFormatCheckbox.checked = e.target.checked;
+            });
+        }
+    }
+
+    // Deck Close Button Logic
+    const mobileDeckCloseBtn = document.getElementById('mobile-deck-close-btn');
+    if (mobileDeckCloseBtn) {
+        mobileDeckCloseBtn.addEventListener('click', () => {
+            if (deckContentColumn) deckContentColumn.classList.remove('active');
+            toggleBackdrop(false);
+            if (mobileNavDeck) mobileNavDeck.classList.remove('active');
         });
     }
 }
@@ -388,10 +495,36 @@ resizers.forEach(resizer => {
         document.addEventListener('mouseup', onMouseUp);
     });
 
+    // Touch Support for Resizing
+    resizer.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        isResizing = true;
+        prevX = e.touches[0].clientX;
+        leftPanel = resizer.previousElementSibling;
+        rightPanel = resizer.nextElementSibling;
+        
+        resizer.classList.add('resizing');
+        // Prevent default to avoid scrolling while resizing
+        e.preventDefault();
+        
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend', onTouchEnd);
+    });
+
     function onMouseMove(e) {
         if (!isResizing) return;
-        const dx = e.clientX - prevX;
-        prevX = e.clientX;
+        handleResizeMove(e.clientX);
+    }
+    
+    function onTouchMove(e) {
+        if (!isResizing) return;
+        e.preventDefault(); // Stop scrolling
+        handleResizeMove(e.touches[0].clientX);
+    }
+
+    function handleResizeMove(clientX) {
+        const dx = clientX - prevX;
+        prevX = clientX;
         
         // Identify which resizer this is
         if (resizer.id === 'resizer-char-deck') {
@@ -437,12 +570,22 @@ resizers.forEach(resizer => {
     }
 
     function onMouseUp() {
+        stopResizing();
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+    }
+    
+    function onTouchEnd() {
+        stopResizing();
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+    }
+    
+    function stopResizing() {
         isResizing = false;
         resizer.classList.remove('resizing');
         document.body.style.cursor = 'default';
         document.body.style.userSelect = '';
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
     }
 });
 
@@ -609,13 +752,14 @@ function createCardElement(card, isDeckItem = false) {
         // Drag Handle
         const dragHandle = document.createElement('div');
         dragHandle.className = 'drag-handle';
-        dragHandle.innerHTML = '⋮⋮';
+        // Content handled by CSS ::before
         el.appendChild(dragHandle);
 
         // Overlay for delete (Now an X button)
         const closeBtn = document.createElement('div');
         closeBtn.className = 'card-close-btn';
-        closeBtn.innerHTML = '×';
+        // Use SVG for perfect centering
+        closeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         closeBtn.onclick = (e) => {
             e.stopPropagation();
             removeFromDeck(card);
@@ -747,12 +891,21 @@ deleteRoomBtn.addEventListener('click', () => {
 
 function updateRoomDropdown() {
     roomSelectDropdown.innerHTML = '<option value="">-- 切换房间 --</option>';
+    const mobileSelect = document.getElementById('mobile-room-select');
+    if (mobileSelect) mobileSelect.innerHTML = '<option value="">-- 房间 --</option>';
+
     rooms.forEach(room => {
         const option = document.createElement('option');
         option.value = room.id;
         option.textContent = room.name;
         if (room.id === currentRoomId) option.selected = true;
         roomSelectDropdown.appendChild(option);
+        
+        if (mobileSelect) {
+            const mOption = option.cloneNode(true);
+            mOption.selected = (room.id === currentRoomId);
+            mobileSelect.appendChild(mOption);
+        }
     });
 }
 
@@ -794,11 +947,12 @@ function updateRoomUI() {
     
     updateDeckVisuals(room);
     renderCharacters(room);
+    updateSessionInfo(); // Ensure info is updated on UI refresh
 }
 
 // --- Character Management ---
 
-// Modal Logic
+
 addCharBtn.addEventListener('click', () => {
     editingCharId = null;
     modalTitle.textContent = "新建角色";
@@ -862,7 +1016,51 @@ function openRenameModal(char) {
 }
 
 
-function renderCharacters(room) {
+// --- Card Preview Modal ---
+    const cardPreviewModal = document.getElementById('card-preview-modal');
+    const cardPreviewContainer = document.getElementById('card-preview-container');
+    const cardPreviewCloseBtn = document.getElementById('card-preview-close-btn');
+
+    function openCardPreviewModal(card) {
+        if (!cardPreviewModal) return;
+        
+        // Populate Content
+        cardPreviewContainer.innerHTML = `
+        <div class="card preview-card-content">
+            <div class="preview-header">
+                <h3 class="card-title">${card.name}</h3>
+                <p class="card-eng">${card.nameEn || ''}</p>
+            </div>
+            <div class="card-text">
+                <div class="card-trigger-section">
+                    <span class="card-label">触发</span>
+                    <p class="card-content-text">${card.trigger}</p>
+                </div>
+                <div class="card-effect-section">
+                    <span class="card-label">效果</span>
+                    <p class="card-content-text">${card.effect}</p>
+                </div>
+                ${card.remarks ? `<div class="card-remark" style="margin-top:auto">${card.remarks}</div>` : ''}
+            </div>
+        </div>
+    `;
+        
+        cardPreviewModal.classList.remove('hidden');
+    }
+
+    if (cardPreviewCloseBtn) {
+        cardPreviewCloseBtn.onclick = () => {
+            cardPreviewModal.classList.add('hidden');
+        };
+        // Close on clicking outside container
+        cardPreviewModal.onclick = (e) => {
+            if (e.target === cardPreviewModal) {
+                cardPreviewModal.classList.add('hidden');
+            }
+        };
+    }
+
+    function renderCharacters(room) {
     characterListDiv.innerHTML = '';
     if (!room.characters) room.characters = [];
     
@@ -872,14 +1070,13 @@ function renderCharacters(room) {
 
         const charEl = document.createElement('div');
         charEl.className = 'character-card-container';
-        charEl.dataset.charId = char.id; // Added for Mobile Drag & Drop
+        charEl.dataset.charId = char.id;
         if (char.id === currentCharacterId) {
             charEl.classList.add('selected');
         }
         
         charEl.onclick = () => selectCharacter(char.id);
 
-        // Drag & Drop: Allow dropping cards from deck to character
         charEl.addEventListener('dragover', (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
@@ -897,7 +1094,7 @@ function renderCharacters(room) {
         const headerSection = document.createElement('div');
         headerSection.className = 'char-header-section';
 
-        // Avatar - Top Left Fixed
+        // Avatar
         const avatarContainer = document.createElement('div');
         avatarContainer.className = 'char-avatar-container';
         
@@ -915,7 +1112,6 @@ function renderCharacters(room) {
              openAvatarModal(char);
         };
         
-        // Emoji (Only if no image)
         if (!char.avatarImage) {
             const emojiSpan = document.createElement('span');
             emojiSpan.className = 'avatar-emoji';
@@ -935,7 +1131,7 @@ function renderCharacters(room) {
         const nameSpan = document.createElement('h4');
         nameSpan.className = 'char-name';
         nameSpan.textContent = char.name;
-        nameSpan.title = char.name; // Fullname on hover
+        nameSpan.title = char.name;
         nameSpan.onclick = (e) => {
             e.stopPropagation();
             openRenameModal(char);
@@ -949,7 +1145,6 @@ function renderCharacters(room) {
         metaRow.className = 'char-meta-row';
         
         const revealedCount = char.cards.filter(c => c.isRevealed).length;
-        // Tags
         metaRow.innerHTML = `
             <span class="char-tag">狂气: ${char.cards.length}</span>
             ${revealedCount > 0 ? `<span class="char-tag" style="color:#E53935">已触发: ${revealedCount}</span>` : ''}
@@ -958,7 +1153,7 @@ function renderCharacters(room) {
         infoSection.appendChild(metaRow);
         headerSection.appendChild(infoSection);
         
-        // Delete Button (Top Right Absolute)
+        // Delete Button
         const deleteBtn = document.createElement('div');
         deleteBtn.className = 'delete-char-btn';
         deleteBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
@@ -975,11 +1170,6 @@ function renderCharacters(room) {
         const handSection = document.createElement('div');
         handSection.className = 'char-hand-section';
         
-        // Madness Count Overlay (Removed)
-        // const countOverlay = document.createElement('div');
-        // ...
-
-        // Cards Grid
         const gridInner = document.createElement('div');
         gridInner.className = 'char-hand-grid-inner';
 
@@ -990,21 +1180,16 @@ function renderCharacters(room) {
                 
                 if (card.isRevealed) {
                     miniCard.textContent = card.name;
-                    // Adjust font size dynamically if needed?
                 } else {
-                    // Card Back visual or just transparent
-                    // Since bg is translucent, maybe just icon?
-                    // User said "80x120px".
-                    // Let's use back image if available or just empty style.
                     const backImg = card.isNewFormat ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
                     miniCard.style.backgroundImage = `url('${backImg}')`;
                     miniCard.style.backgroundSize = 'cover';
                 }
                 
-                // Tooltip Logic (Existing)
-                // ... (Keep existing tooltip logic)
                 miniCard.onmouseenter = (e) => {
-                    // ... (Keep logic)
+                    // Disable tooltip on touch devices (no hover capability)
+                    if (!window.matchMedia('(hover: hover)').matches) return;
+
                     const rect = miniCard.getBoundingClientRect();
                     const tooltip = document.createElement('div');
                     tooltip.className = 'tooltip';
@@ -1030,42 +1215,49 @@ function renderCharacters(room) {
                     }
                 };
                 
-                // Long Press Logic (Tablet Adaptation) - REPLACED for Context Menu
+                // Context Menu
                 addLongPressHandler(miniCard, (x, y) => {
+                    // Flag that long press occurred to prevent click
+                    miniCard.dataset.longPressTriggered = 'true';
                     showContextMenu(x, y, card, char.id);
                 });
 
-                // Tap for Tooltip (Simple Touch)
                 miniCard.addEventListener('touchstart', (e) => {
-                    // Trigger Tooltip immediately on touch? Or just let long press handle context?
-                    // User request: "All right click functions -> Long Press".
-                    // Tooltip is hover. On tablet, maybe tap triggers tooltip?
-                    // Existing logic had long press trigger tooltip.
-                    // Let's make TAP trigger tooltip.
-                    if (!miniCard._tooltipEl) {
-                         miniCard.onmouseenter(e);
-                         // Hide after delay?
-                         setTimeout(() => {
-                             if(miniCard._tooltipEl) miniCard.onmouseleave(e);
-                         }, 3000);
-                    }
+                    miniCard.dataset.longPressTriggered = 'false';
+                    // Optional: Tooltip behavior for mobile can be removed or kept.
+                    // If we want preview modal, we might not need tooltip on touch.
                 }, {passive: true});
                 
-                // Click/Context (Modified to Double Click)
+                miniCard.addEventListener('touchend', (e) => {
+                    // Check if long press happened
+                    if (miniCard.dataset.longPressTriggered === 'true') {
+                         miniCard.dataset.longPressTriggered = 'false';
+                         return;
+                    }
+                    
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTouchTime;
+                    if (tapLength < 300 && tapLength > 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openCardPreviewModal(card);
+                    }
+                    lastTouchTime = currentTime;
+                });
+
                 miniCard.ondblclick = (e) => {
                     e.stopPropagation();
-                    if (miniCard._tooltipEl) miniCard._tooltipEl.remove();
-                    card.isRevealed = !card.isRevealed;
-                    saveData();
-                    renderCharacters(getCurrentRoom());
+                    // Double click can also open preview or toggle reveal?
+                    // Let's make it open preview for consistency
+                    openCardPreviewModal(card);
                 };
                 
-                // Prevent single click from doing anything if it was previously doing something
                 miniCard.onclick = (e) => {
-                    e.stopPropagation(); // Stop propagation to char card
+                    e.stopPropagation();
+                    // Click opens preview
+                    openCardPreviewModal(card);
                 };
 
-                
                 miniCard.oncontextmenu = (e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -1080,6 +1272,14 @@ function renderCharacters(room) {
         charEl.appendChild(handSection);
         characterListDiv.appendChild(charEl);
     });
+
+    // Add Character Button Card
+    const addBtn = document.createElement('div');
+    addBtn.className = 'character-card-container add-char-card';
+    addBtn.innerHTML = '<span>+</span>';
+    addBtn.title = '新建角色';
+    addBtn.onclick = () => addCharBtn.click();
+    characterListDiv.appendChild(addBtn);
 }
 
 // --- Context Menu ---
@@ -1093,6 +1293,10 @@ function showContextMenu(x, y, card, charId) {
     menu.style.left = `${x}px`;
     
     const actions = [
+        { 
+            label: card.isRevealed ? '隐藏 (翻面)' : '公开 (翻面)', 
+            action: 'toggleReveal'
+        },
         { 
             label: '复制文本', 
             action: 'copy'
@@ -1113,6 +1317,10 @@ function showContextMenu(x, y, card, charId) {
                 navigator.clipboard.writeText(text).then(() => {
                     showToast("已复制狂气文本");
                 });
+            } else if (act.action === 'toggleReveal') {
+                card.isRevealed = !card.isRevealed;
+                saveData();
+                renderCharacters(getCurrentRoom());
             } else {
                 handleCardAction(act.action, card, charId);
             }
@@ -1362,11 +1570,27 @@ function initSessionInfo() {
         document.removeEventListener('mousemove', onDragMove);
         document.removeEventListener('mouseup', onDragUp);
     }
+    
+    // Auto-hide Hand Info on outside click/touch
+    document.addEventListener('touchstart', (e) => {
+        // Check if touching inside a hand item wrapper or session info window
+        // If NOT inside these, close all open details
+        if (!e.target.closest('.char-hand-item-wrapper') && !e.target.closest('.session-info-window')) {
+             const openDetails = document.querySelectorAll('.char-hand-item-wrapper > div:not(.char-hand-header):not(.hidden)');
+             openDetails.forEach(el => el.classList.add('hidden'));
+        }
+    }, {passive: true});
+    
+    // Also support click for desktop
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.char-hand-item-wrapper') && !e.target.closest('.session-info-window')) {
+             const openDetails = document.querySelectorAll('.char-hand-item-wrapper > div:not(.char-hand-header):not(.hidden)');
+             openDetails.forEach(el => el.classList.add('hidden'));
+        }
+    });
 }
 
 function updateSessionInfo() {
-    if (sessionInfoWindow.classList.contains('hidden')) return;
-
     const room = getCurrentRoom();
     if (!room) return;
 
@@ -1424,17 +1648,16 @@ function updateSessionInfo() {
 
             // Prepare names
             const handNames = unrevealedCards.map(c => `【${c.name}】`).join(' ') || '无手牌';
-            const detailId = `hand-detail-${char.id}`;
 
             html += `
                 <div class="char-hand-item-wrapper" style="border:1px solid #e5e7eb; border-radius:4px; background:white;">
                     <div class="char-hand-header" 
-                         onclick="const el = document.getElementById('${detailId}'); el.classList.toggle('hidden');" 
+                         onclick="this.nextElementSibling.classList.toggle('hidden');" 
                          style="padding:4px 8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#f9fafb;">
                         <span class="char-name-compact" title="${char.name}" style="font-weight:500;">${char.name}</span>
                         <span class="${badgeClass}" style="${badgeStyle}">${handSize}</span>
                     </div>
-                    <div id="${detailId}" class="hidden" style="padding:4px 8px; font-size:0.75rem; color:#666; border-top:1px solid #eee; background:white;">
+                    <div class="hidden" style="padding:4px 8px; font-size:0.75rem; color:#666; border-top:1px solid #eee; background:white;">
                         ${handNames}
                     </div>
                 </div>
@@ -1463,7 +1686,25 @@ function updateSessionInfo() {
         });
     }
 
-    sessionInfoContent.innerHTML = html;
+    // Update Desktop Window (if visible)
+    if (!sessionInfoWindow.classList.contains('hidden')) {
+        sessionInfoContent.innerHTML = html;
+    }
+
+    // Mobile Embed Update (Always)
+    const mobileEmbed = document.getElementById('mobile-session-info-embed');
+    if (mobileEmbed) {
+        mobileEmbed.innerHTML = html;
+        // Make sure hidden details are handled
+        // Re-attach listeners for mobile embed
+        const headers = mobileEmbed.querySelectorAll('.char-hand-header');
+        headers.forEach(header => {
+            header.onclick = function() {
+                const detail = this.nextElementSibling;
+                if(detail) detail.classList.toggle('hidden');
+            };
+        });
+    }
 }
 
 // Hook updateSessionInfo into data changes
@@ -1522,22 +1763,76 @@ function shuffleDeck() {
     updateDeckVisuals(room);
 }
 
-clearDeckBtn.addEventListener('click', clearDeck);
-shuffleDeckBtn.addEventListener('click', shuffleDeck);
+if (clearDeckBtn) clearDeckBtn.addEventListener('click', clearDeck);
+    if (shuffleDeckBtn) shuffleDeckBtn.addEventListener('click', shuffleDeck);
+    
+    // Mobile Buttons
+    const shuffleDeckBtnMobile = document.getElementById('shuffle-deck-btn-mobile');
+    const clearDeckBtnMobile = document.getElementById('clear-deck-btn-mobile');
+    
+    if (shuffleDeckBtnMobile) shuffleDeckBtnMobile.addEventListener('click', shuffleDeck);
+    if (clearDeckBtnMobile) clearDeckBtnMobile.addEventListener('click', clearDeck);
 
-// Deck List Drop Zone (for Library -> Deck)
+// Deck List Drop Zone (for Library -> Deck AND Reordering to empty space)
 deckList.addEventListener('dragover', (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    e.dataTransfer.dropEffect = 'move';
 });
 
 deckList.addEventListener('drop', (e) => {
     const source = e.dataTransfer.getData('source');
+    
+    // 1. Library -> Deck
     if (source === 'library') {
         const json = e.dataTransfer.getData('application/json');
         if (json) {
             const cardData = JSON.parse(json);
             addToDeck(cardData);
+        }
+        return;
+    }
+    
+    // 2. Deck Reordering (Dropped on empty space -> Move to end)
+    // Check if we dropped ON a card (handled by card's drop listener)
+    // But events bubble up. If we are here, it might be bubbling from a card.
+    // However, if the card's handler calls e.stopPropagation(), we won't reach here.
+    // So if we reach here, we dropped on the container background.
+    
+    if (draggedItem && deckList.contains(draggedItem)) {
+        e.preventDefault();
+        const room = getCurrentRoom();
+        const fromId = draggedItem.dataset.uniqueId;
+        
+        const fromIndex = room.deck.findIndex(c => c.uniqueId.toString() === fromId);
+        
+        if (fromIndex > -1) {
+            // Move to END of deck (which is index 0 visually? No, visually top is end of array)
+            // Wait, array order: [Bottom ... Top]
+            // Visual order: [Top ... Bottom] (reversed)
+            // So appending to array end = Top of deck = Top of list visually?
+            // createCardElement adds to list.
+            // updateDeckVisuals reverses deck: `const reversedDeck = [...room.deck].reverse();`
+            // So index 0 in visual list is last element in array.
+            // If I drop at the bottom of the visual list, I want it to be at the BOTTOM of the deck (index 0 of array).
+            
+            // Let's clarify:
+            // Visual List:
+            // 1. Card A (Top of Deck, Array[Last])
+            // 2. Card B
+            // ...
+            // N. Card Z (Bottom of Deck, Array[0])
+            
+            // If I drop on empty space (usually at bottom of visual list), I expect it to go to the visual bottom?
+            // Yes. Visual bottom = Array index 0.
+            
+            // Remove from old pos
+            const [movedItem] = room.deck.splice(fromIndex, 1);
+            
+            // Insert at index 0 (Bottom of deck)
+            room.deck.unshift(movedItem);
+            
+            saveData();
+            updateDeckVisuals(room);
         }
     }
 });
@@ -1641,11 +1936,16 @@ function updateDeckVisuals(room) {
             // Drag Events
             cardEl.addEventListener('dragstart', handleDragStart);
             cardEl.addEventListener('dragover', handleDragOver);
+            cardEl.addEventListener('dragleave', handleDragLeave); // New
             cardEl.addEventListener('drop', handleDrop);
             cardEl.addEventListener('dragend', handleDragEnd);
 
-            // Mobile Drag (Long Press)
-            addMobileDragHandler(cardEl, card);
+            // Mobile Drag (Long Press on Handle ONLY)
+            // Passing dragHandle as trigger, cardEl as target to clone
+            const dragHandle = cardEl.querySelector('.drag-handle');
+            if (dragHandle) {
+                addMobileDragHandler(dragHandle, card, cardEl);
+            }
 
             deckList.appendChild(cardEl);
         });
@@ -1668,11 +1968,33 @@ function handleDragStart(e) {
 function handleDragOver(e) {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    
+    // Add visual indicator based on mouse position
+    const rect = this.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const width = rect.width;
+    
+    // Remove both classes first
+    this.classList.remove('drag-over-left', 'drag-over-right');
+    
+    if (offsetX < width / 2) {
+        this.classList.add('drag-over-left');
+    } else {
+        this.classList.add('drag-over-right');
+    }
+    
     return false;
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over-left', 'drag-over-right');
 }
 
 function handleDrop(e) {
     e.stopPropagation();
+    
+    // Cleanup classes
+    this.classList.remove('drag-over-left', 'drag-over-right');
     
     const source = e.dataTransfer.getData('source');
     if (source === 'library') {
@@ -1689,17 +2011,40 @@ function handleDrop(e) {
         const fromId = draggedItem.dataset.uniqueId;
         const toId = this.dataset.uniqueId;
         
-        // Find actual indices in the main deck array
         const fromIndex = room.deck.findIndex(c => c.uniqueId.toString() === fromId);
-        const toIndex = room.deck.findIndex(c => c.uniqueId.toString() === toId);
+        // We find toIndex later after removal to ensure correctness
         
-        if (fromIndex > -1 && toIndex > -1) {
-            // Move item
-            const [movedItem] = room.deck.splice(fromIndex, 1);
-            room.deck.splice(toIndex, 0, movedItem);
+        if (fromIndex > -1) {
+            // Determine if inserting before or after based on mouse position at drop time
+            // Or better, check which class was active?
+            // Since drop happens after dragover, we can re-calculate position or trust the last state?
+            // But dragLeave might fire before drop? No, drop replaces it.
+            // Let's re-calculate to be safe.
+            const rect = this.getBoundingClientRect();
+            const offsetX = e.clientX - rect.left;
+            const insertAfter = offsetX >= rect.width / 2;
             
-            saveData();
-            updateDeckVisuals(room);
+            // Remove item first
+            const [movedItem] = room.deck.splice(fromIndex, 1);
+            
+            // Find target index again (indices might have shifted)
+            let newToIndex = room.deck.findIndex(c => c.uniqueId.toString() === toId);
+            
+            if (newToIndex > -1) {
+                // Adjust index if inserting after
+                if (insertAfter) {
+                    newToIndex++;
+                }
+                
+                // Insert at new index
+                room.deck.splice(newToIndex, 0, movedItem);
+                
+                saveData();
+                updateDeckVisuals(room);
+            } else {
+                // Fallback: revert
+                room.deck.splice(fromIndex, 0, movedItem); 
+            }
         }
     }
     return false;
@@ -2084,51 +2429,111 @@ init();
 setTimeout(checkLibraryMode, 100);
 
 // --- Mobile Drag & Drop Implementation ---
-function addMobileDragHandler(el, cardData) {
+function addMobileDragHandler(triggerEl, cardData, targetCardEl) {
     let touchTimer = null;
     let startX, startY;
     
-    el.addEventListener('touchstart', (e) => {
+    // If targetCardEl not provided, assume triggerEl is the card (legacy fallback)
+    const cardEl = targetCardEl || triggerEl;
+    
+    triggerEl.addEventListener('touchstart', (e) => {
         if (e.touches.length !== 1) return;
+        
+        // Stop propagation to prevent card's context menu long press
+        e.stopPropagation();
+        
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         
-        // Visual Feedback for potential drag
-        el.style.transition = 'transform 0.2s';
-        el.style.transform = 'scale(0.95)';
+        // Visual Feedback for potential drag on the CARD
+        cardEl.style.transition = 'transform 0.2s';
+        cardEl.style.transform = 'scale(0.95)';
         
         touchTimer = setTimeout(() => {
             if (navigator.vibrate) navigator.vibrate(50);
-            startMobileDrag(e.touches[0], cardData, el);
+            startMobileDrag(e.touches[0], cardData, cardEl);
             touchTimer = null;
-        }, 500); // 500ms long press threshold
-    }, { passive: true });
+        }, 300); // 300ms long press threshold
+    }, { passive: false });
     
-    el.addEventListener('touchmove', (e) => {
+    triggerEl.addEventListener('touchmove', (e) => {
         if (touchTimer) {
             const dx = e.touches[0].clientX - startX;
             const dy = e.touches[0].clientY - startY;
             // Cancel if moved too much before long press triggers
-            if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+            if (Math.abs(dx) > 15 || Math.abs(dy) > 15) {
                 clearTimeout(touchTimer);
                 touchTimer = null;
-                el.style.transform = ''; // Reset
+                cardEl.style.transform = ''; // Reset
             }
         }
     }, { passive: true });
     
-    el.addEventListener('touchend', () => {
+    triggerEl.addEventListener('touchend', () => {
         if (touchTimer) {
             clearTimeout(touchTimer);
-            el.style.transform = ''; // Reset
+            cardEl.style.transform = ''; // Reset
         }
     });
 }
 
-function startMobileDrag(touch, cardData, originalEl) {
-    originalEl.style.transform = ''; // Reset original
+// Auto-scroll Logic
+let autoScrollInterval = null;
 
-    // 1. Create Clone for Dragging
+function stopAutoScroll() {
+    if (autoScrollInterval) {
+        clearInterval(autoScrollInterval);
+        autoScrollInterval = null;
+    }
+}
+
+function handleMobileAutoScroll(clientY) {
+    const scrollThreshold = 80; // px from edge
+    const scrollSpeed = 15;
+    const viewportHeight = window.innerHeight;
+    const drawerThreshold = window.innerHeight * 0.4;
+    
+    // Only scroll if we are in the drawer area (Reordering)
+    if (clientY > drawerThreshold) {
+        const scrollContainer = document.getElementById('deck-list');
+        if (!scrollContainer) return;
+
+        // Check if we need to scroll
+        let shouldScroll = false;
+        let direction = 0; // -1 up, 1 down
+
+        // Top of drawer area (relative to viewport)
+        // The drawer starts at drawerThreshold.
+        if (clientY < drawerThreshold + scrollThreshold) {
+            direction = -1;
+            shouldScroll = true;
+        } 
+        // Bottom of viewport
+        else if (clientY > viewportHeight - scrollThreshold) {
+            direction = 1;
+            shouldScroll = true;
+        }
+
+        if (shouldScroll) {
+            if (!autoScrollInterval) {
+                autoScrollInterval = setInterval(() => {
+                    scrollContainer.scrollTop += (direction * scrollSpeed);
+                }, 16);
+            }
+        } else {
+            stopAutoScroll();
+        }
+    } else {
+        stopAutoScroll();
+    }
+}
+
+function startMobileDrag(touch, cardData, originalEl) {
+    // 1. Visuals on original
+    originalEl.style.transform = ''; // Reset scale from press effect
+    originalEl.style.opacity = '0.2'; // Dim original to indicate movement
+    
+    // 2. Create Clone for Dragging
     const clone = originalEl.cloneNode(true);
     clone.classList.add('dragging-clone');
     clone.style.width = '160px'; // Force standard width
@@ -2147,75 +2552,158 @@ function startMobileDrag(touch, cardData, originalEl) {
     document.body.appendChild(clone);
     document.body.classList.add('dragging-active');
     
-    // 2. Hide Drawer & Backdrop to reveal characters
+    // 3. Setup Context
     const deckContentColumn = document.getElementById('deck-content-column');
-    const librarySection = document.getElementById('library-section');
     const backdrop = document.querySelector('.drawer-backdrop');
+    const deckList = document.getElementById('deck-list');
+    const room = getCurrentRoom();
     
-    // Temporarily hide active drawers without changing state logic too much
-    // We just remove the class visually
-    if (deckContentColumn) deckContentColumn.classList.remove('active');
-    if (librarySection) librarySection.classList.remove('active');
-    if (backdrop) backdrop.classList.remove('active');
+    // Threshold for switching between Reorder (Drawer) and Assign (Char List)
+    // Drawer height is 60vh, so top is at 40% of viewport height
+    const drawerThreshold = window.innerHeight * 0.4;
     
-    // 3. Global Move Listener
+    let lastSwapTime = 0;
+    let isDrawerHidden = false;
+
+    // 4. Global Move Listener
     const moveHandler = (e) => {
         e.preventDefault(); // Prevent scrolling
         const t = e.touches[0];
         
+        // Auto-scroll
+        handleMobileAutoScroll(t.clientY);
+
         // Update Clone Position
         clone.style.left = (t.clientX - 80) + 'px';
         clone.style.top = (t.clientY - 112) + 'px';
         
-        // Highlight Target
-        // Hide clone temporarily to get element underneath? 
-        // pointer-events: none on clone handles this.
-        const target = document.elementFromPoint(t.clientX, t.clientY);
-        const charCard = target ? target.closest('.character-card-container') : null;
-        
-        document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
-        if (charCard) {
-            charCard.classList.add('drag-target-active');
+        // Logic Branch: Inside vs Outside Drawer
+        if (t.clientY < drawerThreshold) {
+            // --- OUTSIDE DRAWER (Assign Mode) ---
+            if (!isDrawerHidden) {
+                if (deckContentColumn) deckContentColumn.classList.remove('active');
+                if (backdrop) backdrop.classList.remove('active');
+                isDrawerHidden = true;
+            }
+            
+            // Highlight Character Targets
+            const target = document.elementFromPoint(t.clientX, t.clientY);
+            const charCard = target ? target.closest('.character-card-container') : null;
+            
+            document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
+            if (charCard) {
+                charCard.classList.add('drag-target-active');
+            }
+            
+        } else {
+            // --- INSIDE DRAWER (Reorder Mode) ---
+            if (isDrawerHidden) {
+                if (deckContentColumn) deckContentColumn.classList.add('active');
+                if (backdrop) backdrop.classList.add('active');
+                isDrawerHidden = false;
+            }
+            
+            // Clear Char Highlights
+            document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
+            
+            // Reorder Logic
+            const target = document.elementFromPoint(t.clientX, t.clientY);
+            const targetCard = target ? target.closest('.card') : null;
+            
+            // Check if we are hovering over a different card in the deck list
+            if (targetCard && targetCard !== originalEl && deckList.contains(targetCard)) {
+                const now = Date.now();
+                if (now - lastSwapTime > 100) { // Throttle swaps (100ms)
+                    performMobileSwap(originalEl, targetCard, room);
+                    lastSwapTime = now;
+                }
+            }
         }
     };
     
-    // 4. End Listener
+    // 5. End Listener
     const endHandler = (e) => {
         document.removeEventListener('touchmove', moveHandler);
         document.removeEventListener('touchend', endHandler);
+        stopAutoScroll();
         
         const t = e.changedTouches[0];
-        const target = document.elementFromPoint(t.clientX, t.clientY);
-        const charCard = target ? target.closest('.character-card-container') : null;
-        
         let success = false;
         
-        if (charCard && charCard.dataset.charId) {
-            // Success Drop
-            moveCardFromDeckToChar(cardData.uniqueId.toString(), charCard.dataset.charId);
-            showToast(`已装备狂气给 ${charCard.querySelector('.char-name').textContent}`);
-            success = true;
-        }
-        
-        if (success) {
-            clone.remove();
-            // Do not reopen drawer automatically on success
-        } else {
-            // Fail/Cancel Animation
-            clone.style.transition = 'all 0.2s ease-in';
-            clone.style.opacity = '0';
-            clone.style.transform = 'scale(0.5)';
-            setTimeout(() => clone.remove(), 200);
+        // Check drop target
+        if (t.clientY < drawerThreshold) {
+            // Dropped in Assign Area
+            const target = document.elementFromPoint(t.clientX, t.clientY);
+            const charCard = target ? target.closest('.character-card-container') : null;
             
-            // Restore Drawer (Deck Content)
-            if (deckContentColumn) deckContentColumn.classList.add('active');
-            if (backdrop) backdrop.classList.add('active');
+            if (charCard && charCard.dataset.charId) {
+                // Assign to Character
+                moveCardFromDeckToChar(cardData.uniqueId.toString(), charCard.dataset.charId);
+                showToast(`已装备狂气给 ${charCard.querySelector('.char-name').textContent}`);
+                success = true;
+                // Drawer stays hidden naturally or we can reset state if needed
+                // But usually we want to see the result on the character
+            }
+        } else {
+            // Dropped in Drawer (Reorder confirmed)
+            // Save the new order
+            saveData();
+            // Refresh visuals to ensure indices/state are clean
+            updateDeckVisuals(room);
+            success = true; // Considered success as reorder
         }
         
+        // Cleanup
+        clone.remove();
         document.body.classList.remove('dragging-active');
         document.querySelectorAll('.character-card-container').forEach(c => c.classList.remove('drag-target-active'));
+        
+        if (!success) {
+            // If failed (e.g. dropped in void), restore drawer
+            if (deckContentColumn) deckContentColumn.classList.add('active');
+            if (backdrop) backdrop.classList.add('active');
+            updateDeckVisuals(room); // Restore original
+        } else {
+            // Even on success, if we were reordering, we want drawer open.
+            // If we assigned, we might want drawer closed?
+            // Existing logic: moveCardFromDeckToChar -> updateDeckVisuals -> which doesn't auto-open drawer
+            // But if we assigned, isDrawerHidden was true.
+            // If we reordered, isDrawerHidden was false.
+            if (!isDrawerHidden) {
+                if (deckContentColumn) deckContentColumn.classList.add('active');
+                if (backdrop) backdrop.classList.add('active');
+            }
+        }
     };
     
     document.addEventListener('touchmove', moveHandler, { passive: false });
     document.addEventListener('touchend', endHandler);
+}
+
+function performMobileSwap(cardA, cardB, room) {
+    const parent = cardA.parentNode;
+    const siblings = [...parent.children];
+    const idxA = siblings.indexOf(cardA);
+    const idxB = siblings.indexOf(cardB);
+    
+    // DOM Swap
+    if (idxA < idxB) {
+        parent.insertBefore(cardA, cardB.nextSibling);
+    } else {
+        parent.insertBefore(cardA, cardB);
+    }
+    
+    // Data Swap (Array is reversed relative to DOM)
+    const dataIdxA = room.deck.length - 1 - idxA;
+    // Note: After DOM swap, the indices change, but we need the indices BEFORE the swap for logic?
+    // Actually, we need to swap the elements in the data array corresponding to the positions.
+    // Let's use the indices we found.
+    const dataIdxB = room.deck.length - 1 - idxB;
+    
+    // We just swap the elements at these positions
+    if (dataIdxA >= 0 && dataIdxB >= 0 && dataIdxA < room.deck.length && dataIdxB < room.deck.length) {
+         const temp = room.deck[dataIdxA];
+         room.deck[dataIdxA] = room.deck[dataIdxB];
+         room.deck[dataIdxB] = temp;
+    }
 }
