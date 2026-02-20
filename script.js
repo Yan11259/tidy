@@ -2177,11 +2177,17 @@ function render3DStack(count) {
     const topX = (renderCount - 1) * -2;
     const topY = (renderCount - 1) * -2;
     
+    // Reset animation state explicitly for new top card
+    topCard.style.transition = 'none'; // Disable transition to snap
+    topCard.style.opacity = '1';
     topCard.style.transform = `translate3d(${topX}px, ${topY}px, ${topZ}px) rotateZ(${topRndRot}deg)`;
     topCard.style.zIndex = renderCount; // On top
     
     const topBackImg = (topCardData.isNewFormat) ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
     topCard.style.backgroundImage = `url('${topBackImg}')`;
+    
+    // Re-enable transition after a tick if needed, but 'performDraw' handles the animation logic.
+    // The key is that when render3DStack is called (after draw), we want the NEW top card to appear instantly in place.
     
     updateDeckLighting();
 }
