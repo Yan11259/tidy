@@ -2054,35 +2054,120 @@ function handleDrop(e) {
         
         if (fromIndex > -1) {
             // Determine if inserting before or after based on mouse position at drop time
-            // Or better, check which class was active?
-            // Since drop happens after dragover, we can re-calculate position or trust the last state?
-            // But dragLeave might fire before drop? No, drop replaces it.
-            // Let's re-calculate to be safe.
             const rect = this.getBoundingClientRect();
             const offsetX = e.clientX - rect.left;
+            // Visual indicator: Left = Before, Right = After
+            // But logic was reversed? 
+            // If dragging to LEFT half, we want to insert BEFORE (index remains same if moving from far away, or adjusts)
+            
             const insertAfter = offsetX >= rect.width / 2;
             
             // Remove item first
+            // Note: room.deck is array [Bottom ... Top]
+            // Visual list is [Top ... Bottom] (reversed)
+            
+            // Wait! The visual list is rendered from `reversedDeck`.
+            // So visual index 0 is deck[length-1].
+            // If I drop "Before" visual item at index i, I am inserting "After" in the array (towards higher index)?
+            // Let's trace indices.
+            
+            // Array: [A, B, C] (A=Bottom, C=Top)
+            // Visual: [C, B, A]
+            
+            // If I drag A (visual bottom) to before C (visual top).
+            // Visual target: C. Drop "Before" C (Left side of C).
+            // Expected Visual: [A, C, B] (A becomes new top?) 
+            // Wait, "Before" in LTR grid usually means "Left of".
+            // In a wrapped grid, "Left" is lower index in the VISUAL list.
+            // So "Before C" means new visual order: [A, C, B] ? No, [A, C, B] means A is index 0, C is 1.
+            // If C was index 0. "Before C" -> New Item at index 0. C becomes index 1.
+            // So Visual: [A, C, B]
+            
+            // Map Visual Index to Array Index:
+            // Visual 0 -> Array N-1
+            // Visual 1 -> Array N-2
+            
+            // This inversion makes "insert before visual" tricky if we operate on array directly.
+            // Let's simplify: Operate on Reversed Array (Visual) then un-reverse?
+            // Or calculate target Array index correctly.
+            
+            // Let's look at `toId`.
+            let toIndexInArray = room.deck.findIndex(c => c.uniqueId.toString() === toId);
+            
+            // If Insert After (Visual Right side):
+            // Visual: [C] -> Drop A right of C -> [C, A]
+            // C was visual 0. A becomes visual 1.
+            // Array: C was N-1. A becomes N-2.
+            // So "Visual After" = "Array Lower Index" (closer to 0).
+            
+            // If Insert Before (Visual Left side):
+            // Visual: [C] -> Drop A left of C -> [A, C]
+            // A becomes visual 0. C becomes visual 1.
+            // Array: A becomes N-1. C becomes N-2.
+            // So "Visual Before" = "Array Higher Index" (closer to length).
+            
+            // Currently:
+            // const [movedItem] = room.deck.splice(fromIndex, 1);
+            // let newToIndex = room.deck.findIndex(...)
+            // if (insertAfter) newToIndex++ 
+            
+            // This logic assumes `room.deck` matches visual order, but it's REVERSED.
+            // We need to invert the logic for "After".
+            
+            // "Visual Left" (Before) -> We want to be "On Top" of target in Stack (Higher Array Index)
+            // "Visual Right" (After) -> We want to be "Below" target in Stack (Lower Array Index)
+            
+            // Let's re-implement by manipulating the array to match visual intent.
+            
+            // 1. Remove from array
             const [movedItem] = room.deck.splice(fromIndex, 1);
             
-            // Find target index again (indices might have shifted)
-            let newToIndex = room.deck.findIndex(c => c.uniqueId.toString() === toId);
+            // 2. Find target's new index
+            let targetIndex = room.deck.findIndex(c => c.uniqueId.toString() === toId);
             
-            if (newToIndex > -1) {
-                // Adjust index if inserting after
-                if (insertAfter) {
-                    newToIndex++;
-                }
-                
-                // Insert at new index
-                room.deck.splice(newToIndex, 0, movedItem);
-                
-                saveData();
-                updateDeckVisuals(room);
+            // 3. Calculate Insertion
+            // If Visual Left (Before) -> We want A to appear before B in list.
+            // List: [A, B]. Array: [..., B, A, ...] (since reversed)
+            // So A should have HIGHER index than B.
+            // targetIndex is B's index. We want A at targetIndex + 1.
+            
+            // If Visual Right (After) -> We want A to appear after B in list.
+            // List: [B, A]. Array: [..., A, B, ...]
+            // So A should have LOWER index than B.
+            // targetIndex is B's index. We want A at targetIndex.
+            
+            // Wait, splice(index, 0, item) inserts AT index, shifting current item to index+1.
+            // So:
+            // Target B at index 5.
+            // Visual Left (Before B) -> Array [..., B, A] -> A at 6? No, A at 6 means A is "Top".
+            // Visual List: [Top, ..., Bottom]
+            // Visual Left of B (Top) -> New Top -> Higher Array Index.
+            // So "Visual Left" -> Insert at targetIndex + 1.
+            // "Visual Right" -> Insert at targetIndex.
+            
+            // BUT: offsetX < width/2 is Left.
+            // insertAfter = offsetX >= width/2 (Right).
+            
+            // So:
+            // If insertAfter (Right) -> Insert at targetIndex.
+            // If !insertAfter (Left) -> Insert at targetIndex + 1.
+            
+            // Let's apply this.
+            
+            if (insertAfter) {
+                // Visual Right -> Array Lower Index -> Insert AT targetIndex (pushing target up to targetIndex+1)
+                // Result: [A, Target] in array. 
+                // Visual: [Target, A]. Correct.
+                room.deck.splice(targetIndex, 0, movedItem);
             } else {
-                // Fallback: revert
-                room.deck.splice(fromIndex, 0, movedItem); 
+                // Visual Left -> Array Higher Index -> Insert AT targetIndex + 1.
+                // Result: [Target, A] in array.
+                // Visual: [A, Target]. Correct.
+                room.deck.splice(targetIndex + 1, 0, movedItem);
             }
+            
+            saveData();
+            updateDeckVisuals(room);
         }
     }
     return false;
