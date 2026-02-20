@@ -536,12 +536,26 @@ resizers.forEach(resizer => {
             }
         } else if (resizer.id === 'resizer-deck-library') {
             // Dragging between Deck (Left) and Library (Right)
-            // Resize Right Panel (Library) inversely?
-            // Usually dragging a right-side panel border changes the right panel width if it's fixed.
-            // But here the resizer is on the LEFT of the Library.
-            // Moving resizer RIGHT (positive dx) means Library gets SMALLER (pushed).
-            // Moving resizer LEFT (negative dx) means Library gets BIGGER (pulled).
-            const newWidth = rightPanel.offsetWidth - dx;
+            // Resize Right Panel (Library) inversely
+            
+            // Calculate max available width to prevent pushing other columns off screen
+            // Total = Char(280) + Deck(min 200) + Library(current) + 3D(320)
+            // Available for Library = Window - Char - 3D - MinDeck
+            // Note: Char and 3D might be resizable too, but we use their current offsetWidth
+            
+            const charCol = document.getElementById('character-column');
+            const deck3dCol = document.getElementById('deck-3d-column');
+            const charWidth = charCol ? charCol.offsetWidth : 280;
+            const deck3dWidth = deck3dCol ? deck3dCol.offsetWidth : 320;
+            const minDeckWidth = 200;
+            
+            const maxLibraryWidth = window.innerWidth - charWidth - deck3dWidth - minDeckWidth;
+            
+            let newWidth = rightPanel.offsetWidth - dx;
+            
+            // Cap width
+            if (newWidth > maxLibraryWidth) newWidth = maxLibraryWidth;
+            
             if (newWidth > 200 && newWidth < 800) {
                 rightPanel.style.flex = `0 0 ${newWidth}px`;
                 
@@ -771,7 +785,8 @@ function createCardElement(card, isDeckItem = false) {
         el.setAttribute('draggable', 'true');
         el.addEventListener('dragstart', (e) => {
             e.dataTransfer.effectAllowed = 'copy';
-            e.dataTransfer.setData('application/json', JSON.stringify(card));
+            // Use text/plain for better compatibility, prefix with identifier
+            e.dataTransfer.setData('text/plain', 'LIBRARY_CARD:' + JSON.stringify(card));
             e.dataTransfer.setData('source', 'library');
         });
     }
@@ -1784,10 +1799,23 @@ deckList.addEventListener('drop', (e) => {
     
     // 1. Library -> Deck
     if (source === 'library') {
-        const json = e.dataTransfer.getData('application/json');
+        let json = e.dataTransfer.getData('application/json');
+        
+        // Fallback for text/plain
+        if (!json) {
+            const text = e.dataTransfer.getData('text/plain');
+            if (text && text.startsWith('LIBRARY_CARD:')) {
+                json = text.substring('LIBRARY_CARD:'.length);
+            }
+        }
+
         if (json) {
-            const cardData = JSON.parse(json);
-            addToDeck(cardData);
+            try {
+                const cardData = JSON.parse(json);
+                addToDeck(cardData);
+            } catch (err) {
+                console.error('Failed to parse card data', err);
+            }
         }
         return;
     }
@@ -1991,20 +2019,30 @@ function handleDragLeave(e) {
 }
 
 function handleDrop(e) {
-    e.stopPropagation();
-    
-    // Cleanup classes
-    this.classList.remove('drag-over-left', 'drag-over-right');
-    
-    const source = e.dataTransfer.getData('source');
-    if (source === 'library') {
-        const json = e.dataTransfer.getData('application/json');
-        if (json) {
-            const cardData = JSON.parse(json);
-            addToDeck(cardData);
+        e.stopPropagation();
+        
+        // Cleanup classes
+        this.classList.remove('drag-over-left', 'drag-over-right');
+        
+        const source = e.dataTransfer.getData('source');
+        if (source === 'library') {
+            let json = e.dataTransfer.getData('application/json');
+            // Fallback for text/plain
+            if (!json) {
+                const text = e.dataTransfer.getData('text/plain');
+                if (text && text.startsWith('LIBRARY_CARD:')) {
+                    json = text.substring('LIBRARY_CARD:'.length);
+                }
+            }
+
+            if (json) {
+                try {
+                    const cardData = JSON.parse(json);
+                    addToDeck(cardData);
+                } catch (err) { console.error(err); }
+            }
+            return false;
         }
-        return false;
-    }
 
     if (draggedItem !== this && draggedItem) {
         const room = getCurrentRoom();
