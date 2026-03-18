@@ -13,7 +13,6 @@ const activeRoomContent = document.getElementById('active-room-content');
 const noRoomMsg = document.getElementById('no-room-msg');
 const currentRoomName = document.getElementById('current-room-name');
 const createRoomBtn = document.getElementById('create-room-btn');
-const roomNameInput = document.getElementById('room-name-input');
 const roomSelectDropdown = document.getElementById('room-select-dropdown');
 const deleteRoomBtn = document.getElementById('delete-room-btn');
 const bigFormatToggle = document.getElementById('big-format-toggle'); // New Toggle
@@ -27,8 +26,10 @@ const closeDrawBtn = document.getElementById('close-draw-btn');
 const deckCountSpan = document.getElementById('deck-count');
 const deckList = document.getElementById('deck-list');
 const deck3dStack = document.getElementById('deck-3d-stack');
-const categoryFilter = document.getElementById('category-filter');
+const categoryFilterDesktop = document.getElementById('category-filter');
+const categoryFilterMobile = document.getElementById('category-filter-mobile');
 const librarySearchInput = document.getElementById('library-search-input');
+const createCustomMadnessBtn = document.getElementById('create-custom-madness-btn');
 const toggleLibraryViewBtn = document.getElementById('toggle-library-view-btn');
 const libraryModeLabel = document.getElementById('library-mode-label');
 
@@ -78,11 +79,158 @@ const modalConfirm = document.getElementById('modal-confirm-btn');
 const modalCancel = document.getElementById('modal-cancel-btn');
 let editingCharId = null;
 
+const characterInfoModal = document.getElementById('character-info-modal');
+const characterInfoTitle = document.getElementById('character-info-title');
+const characterInfoCloseBtn = document.getElementById('character-info-close-btn');
+const charNameInput = document.getElementById('char-name-input');
+const charCardColorInput = document.getElementById('char-card-color');
+const charSanityCurrentInput = document.getElementById('char-sanity-current');
+const charSanityMaxInput = document.getElementById('char-sanity-max');
+const charHpCurrentInput = document.getElementById('char-hp-current');
+const charHpMaxInput = document.getElementById('char-hp-max');
+const charSanityCurrentDecBtn = document.getElementById('char-sanity-current-dec');
+const charSanityCurrentIncBtn = document.getElementById('char-sanity-current-inc');
+const charSanityMaxDecBtn = document.getElementById('char-sanity-max-dec');
+const charSanityMaxIncBtn = document.getElementById('char-sanity-max-inc');
+const charHpCurrentDecBtn = document.getElementById('char-hp-current-dec');
+const charHpCurrentIncBtn = document.getElementById('char-hp-current-inc');
+const charHpMaxDecBtn = document.getElementById('char-hp-max-dec');
+const charHpMaxIncBtn = document.getElementById('char-hp-max-inc');
+const charItemGrid = document.getElementById('char-item-grid');
+const charNotesInput = document.getElementById('char-notes-input');
+const charNotesCount = document.getElementById('char-notes-count');
+let characterInfoCharId = null;
+
+const customEditorModal = document.getElementById('custom-madness-editor-modal');
+const customEditorCloseBtn = document.getElementById('custom-editor-close-btn');
+const customGroupInput = document.getElementById('custom-group');
+const customNameInput = document.getElementById('custom-name');
+const customTriggerInput = document.getElementById('custom-trigger');
+const customEffectInput = document.getElementById('custom-effect');
+const customRemarksInput = document.getElementById('custom-remarks');
+const customSaveBtn = document.getElementById('custom-save-btn');
+const customEditorError = document.getElementById('custom-editor-error');
+const customPreviewContainer = document.getElementById('custom-preview-container');
+
+const exportCodeModal = document.getElementById('export-code-modal');
+const exportCloseBtn = document.getElementById('export-close-btn');
+const exportCodeText = document.getElementById('export-code-text');
+const exportCopyBtn = document.getElementById('export-copy-btn');
+const generateExportCodeBtn = document.getElementById('generate-export-code-btn');
+const mobileGenerateExportCodeBtn = document.getElementById('mobile-generate-export-code-btn');
+
+
 // Constants
 const CHARACTER_COLORS = [
     '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', 
     '#3498db', '#9b59b6', '#34495e', '#7f8c8d'
 ];
+
+function randomHexColor() {
+    return `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, '0')}`;
+}
+
+function pickUniqueRandomColor(usedColors, maxTries = 40) {
+    const used = usedColors instanceof Set ? usedColors : new Set();
+    for (let i = 0; i < maxTries; i++) {
+        const c = randomHexColor().toLowerCase();
+        if (!used.has(c)) return c;
+    }
+    return randomHexColor().toLowerCase();
+}
+
+function hexToRgba(hex, alpha) {
+    const a = Number.isFinite(alpha) ? Math.max(0, Math.min(1, alpha)) : 1;
+    if (typeof hex !== 'string') return `rgba(59, 130, 246, ${a})`;
+    const raw = hex.trim().replace('#', '');
+    if (raw.length === 3) {
+        const r = parseInt(raw[0] + raw[0], 16);
+        const g = parseInt(raw[1] + raw[1], 16);
+        const b = parseInt(raw[2] + raw[2], 16);
+        if ([r, g, b].some(n => Number.isNaN(n))) return `rgba(59, 130, 246, ${a})`;
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+    if (raw.length === 6) {
+        const r = parseInt(raw.slice(0, 2), 16);
+        const g = parseInt(raw.slice(2, 4), 16);
+        const b = parseInt(raw.slice(4, 6), 16);
+        if ([r, g, b].some(n => Number.isNaN(n))) return `rgba(59, 130, 246, ${a})`;
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+    return `rgba(59, 130, 246, ${a})`;
+}
+
+function hexToRgb(hex) {
+    if (typeof hex !== 'string') return null;
+    const raw = hex.trim().replace('#', '');
+    if (raw.length === 3) {
+        const r = parseInt(raw[0] + raw[0], 16);
+        const g = parseInt(raw[1] + raw[1], 16);
+        const b = parseInt(raw[2] + raw[2], 16);
+        if ([r, g, b].some(n => Number.isNaN(n))) return null;
+        return { r, g, b };
+    }
+    if (raw.length === 6) {
+        const r = parseInt(raw.slice(0, 2), 16);
+        const g = parseInt(raw.slice(2, 4), 16);
+        const b = parseInt(raw.slice(4, 6), 16);
+        if ([r, g, b].some(n => Number.isNaN(n))) return null;
+        return { r, g, b };
+    }
+    return null;
+}
+
+function rgbToHsl(r, g, b) {
+    const rr = Math.max(0, Math.min(255, r)) / 255;
+    const gg = Math.max(0, Math.min(255, g)) / 255;
+    const bb = Math.max(0, Math.min(255, b)) / 255;
+    const max = Math.max(rr, gg, bb);
+    const min = Math.min(rr, gg, bb);
+    const d = max - min;
+    let h = 0;
+    if (d !== 0) {
+        if (max === rr) h = ((gg - bb) / d) % 6;
+        else if (max === gg) h = (bb - rr) / d + 2;
+        else h = (rr - gg) / d + 4;
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+    }
+    const l = (max + min) / 2;
+    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    return { h, s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+function setCharColorVars(el, hex) {
+    if (!el || typeof hex !== 'string') return;
+    const color = hex.trim();
+    el.style.setProperty('--char-color', color);
+    el.style.setProperty('--char-color-strong', hexToRgba(color, 0.72));
+    el.style.setProperty('--char-color-mid', hexToRgba(color, 0.48));
+    el.style.setProperty('--fade-color', hexToRgba(color, 0.42));
+    el.style.setProperty('--halo-dur', `${(10 + Math.random() * 10).toFixed(2)}s`);
+    el.style.setProperty('--halo-delay', `${(-Math.random() * 12).toFixed(2)}s`);
+
+    const rgb = hexToRgb(color);
+    if (!rgb) return;
+    const { h, s, l } = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    let accentHue = (h + 45) % 360;
+    if (h >= 250 && h <= 315) accentHue = (h + 300) % 360;
+    else if (h >= 30 && h <= 90) accentHue = (h + 80) % 360;
+    else if (h >= 0 && h <= 25) accentHue = (h + 55) % 360;
+
+    const accentS = Math.max(60, Math.min(96, s));
+    const accentL = Math.max(52, Math.min(72, l + 12));
+    el.style.setProperty('--char-accent-strong', `hsla(${accentHue} ${accentS}% ${accentL}% / 0.62)`);
+    el.style.setProperty('--char-accent-mid', `hsla(${accentHue} ${accentS}% ${Math.max(40, accentL - 14)}% / 0.30)`);
+}
+
+function formatCharStatsText(char) {
+    const sanityCur = Number.isFinite(char.sanityCurrent) ? char.sanityCurrent : 6;
+    const sanityMax = Number.isFinite(char.sanityMax) ? char.sanityMax : 6;
+    const hpCur = Number.isFinite(char.hpCurrent) ? char.hpCurrent : 6;
+    const hpMax = Number.isFinite(char.hpMax) ? char.hpMax : 6;
+    return `生命${hpCur}/${hpMax} 正气${sanityCur}/${sanityMax}`;
+}
 
 // Global Toast
 function showToast(msg) {
@@ -105,18 +253,13 @@ function showToast(msg) {
 if (libraryToggleBtn) {
     libraryToggleBtn.addEventListener('click', () => {
         librarySection.classList.toggle('hidden');
-        
-        // Ensure resizers are shown/hidden
-        // Resizer AFTER library is handled by CSS .library-section.hidden + .resizer
-        // Resizer BEFORE library (resizer-deck-library) is handled by :has() in CSS
-        // But for safety, let's toggle class on resizer-deck-library
-        const deckResizer = document.getElementById('resizer-deck-library');
-        if (deckResizer) {
-             if (librarySection.classList.contains('hidden')) {
-                 deckResizer.classList.add('hidden');
-             } else {
-                 deckResizer.classList.remove('hidden');
-             }
+        if (!librarySection.classList.contains('hidden')) {
+            librarySection.classList.remove('collapsed');
+            requestAnimationFrame(() => {
+                if (librarySection.offsetWidth < 200) {
+                    librarySection.style.flex = '0 0 300px';
+                }
+            });
         }
     });
 }
@@ -193,6 +336,28 @@ function init() {
         });
     }
 
+    // Migration: Assign drawnOrder to existing cards
+    rooms.forEach(room => {
+        if (room.characters) {
+            room.characters.forEach(char => {
+                if (char.cards) {
+                    char.cards.forEach((c, i) => {
+                        if (!c.drawnOrder) c.drawnOrder = i + 1;
+                        
+                        // Fix for existing revealed cards missing timestamp
+                        if (c.isRevealed && !c.revealedAt) {
+                            // Assign a mock timestamp based on existing revealOrder or drawnOrder
+                            // to maintain relative order as best as possible.
+                            // Assuming revealOrder was set previously, use it.
+                            const baseTime = Date.now() - 100000;
+                            c.revealedAt = baseTime + (c.revealOrder || i) * 1000;
+                        }
+                    });
+                }
+            });
+        }
+    });
+
     // Fix for "Clicking anywhere triggers input focus"
     // Forces blur if clicking on non-interactive elements while an input is focused.
     document.addEventListener('click', (e) => {
@@ -216,6 +381,49 @@ function init() {
     const mobileNavDeck = document.getElementById('mobile-nav-deck');
     const mobileNavLibrary = document.getElementById('mobile-nav-library');
     const deckContentColumn = document.getElementById('deck-content-column');
+
+    initDocking();
+    initEdgeResize();
+    window.addEventListener('resize', autoLibraryModeByWidth, { passive: true });
+    
+    // Dark Mode Logic
+    const toggleDarkModeBtn = document.getElementById('dark-mode-toggle-pc');
+    const toggleDarkModeBtnMobile = document.getElementById('dark-mode-toggle-mobile');
+    
+    // Icons
+    const moonIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+    const sunIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+
+    function updateDarkModeIcons(isDark) {
+        const icon = isDark ? sunIcon : moonIcon;
+        const title = isDark ? "切换日间模式" : "切换黑夜模式";
+        
+        if(toggleDarkModeBtn) {
+            toggleDarkModeBtn.innerHTML = icon;
+            toggleDarkModeBtn.title = title;
+        }
+        if(toggleDarkModeBtnMobile) {
+            toggleDarkModeBtnMobile.innerHTML = icon;
+            toggleDarkModeBtnMobile.title = title;
+        }
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('insane_dark_mode', isDark);
+        updateDarkModeIcons(isDark);
+    }
+    
+    // Init state
+    const savedDarkMode = localStorage.getItem('insane_dark_mode') === 'true';
+    if (savedDarkMode) {
+        document.body.classList.add('dark-mode');
+    }
+    updateDarkModeIcons(savedDarkMode);
+    
+    if (toggleDarkModeBtn) toggleDarkModeBtn.addEventListener('click', toggleDarkMode);
+    if (toggleDarkModeBtnMobile) toggleDarkModeBtnMobile.addEventListener('click', toggleDarkMode);
     
     // Create Backdrop if not exists
     let drawerBackdrop = document.querySelector('.drawer-backdrop');
@@ -273,8 +481,7 @@ function init() {
                 mobileNavLibrary.classList.add('active');
                 mobileNavDeck.classList.remove('active');
                 
-                // Force Tile Mode (Expanded) on Mobile
-                setLibraryMode(true);
+                autoLibraryModeByWidth();
             }
         });
     }
@@ -324,17 +531,43 @@ function init() {
     const createRoomModalInput = document.getElementById('create-room-modal-input');
     const createRoomModalConfirm = document.getElementById('create-room-modal-confirm');
     const createRoomModalCancel = document.getElementById('create-room-modal-cancel');
+    const createRoomModalImportCode = document.getElementById('create-room-modal-import-code');
+    const createRoomImportProgressFill = document.getElementById('create-room-import-progress-fill');
+    const createRoomImportStatusText = document.getElementById('create-room-import-status-text');
+    const createRoomModalImportConfirm = document.getElementById('create-room-modal-import-confirm');
+    const createRoomModalCloseBtn = document.getElementById('create-room-modal-close');
+
+    function openCreateRoomModal() {
+        if (!createRoomModal) return;
+        createRoomModal.classList.remove('hidden');
+        if (createRoomModalInput) createRoomModalInput.focus();
+        if (createRoomModalImportCode) createRoomModalImportCode.value = '';
+        if (createRoomImportProgressFill) createRoomImportProgressFill.style.width = '0%';
+        if (createRoomImportStatusText) createRoomImportStatusText.textContent = '';
+    }
+
+    function closeCreateRoomModal() {
+        if (!createRoomModal) return;
+        createRoomModal.classList.add('hidden');
+    }
+
+    window.openCreateRoomModal = openCreateRoomModal;
 
     if (mobileCreateBtn) {
         mobileCreateBtn.addEventListener('click', () => {
-             createRoomModal.classList.remove('hidden');
-             createRoomModalInput.focus();
+             openCreateRoomModal();
         });
     }
 
     if (createRoomModalCancel) {
         createRoomModalCancel.addEventListener('click', () => {
-            createRoomModal.classList.add('hidden');
+            closeCreateRoomModal();
+        });
+    }
+
+    if (createRoomModalCloseBtn) {
+        createRoomModalCloseBtn.addEventListener('click', () => {
+            closeCreateRoomModal();
         });
     }
 
@@ -353,11 +586,18 @@ function init() {
                 updateRoomDropdown();
                 selectRoom(newRoom.id);
                 createRoomModalInput.value = '';
-                createRoomModal.classList.add('hidden');
+                closeCreateRoomModal();
                 showToast("房间已创建");
             } else {
-                alert("请输入房间名");
+                showToast("请输入房间名");
             }
+        });
+    }
+    if (createRoomModalImportConfirm) {
+        createRoomModalImportConfirm.addEventListener('click', async () => {
+            const code = createRoomModalImportCode ? createRoomModalImportCode.value.trim() : '';
+            const ok = await importRoomFromCode(code, createRoomImportProgressFill, createRoomImportStatusText);
+            if (ok) closeCreateRoomModal();
         });
     }
 
@@ -418,11 +658,88 @@ function init() {
             if (mobileNavDeck) mobileNavDeck.classList.remove('active');
         });
     }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (customEditorModal && !customEditorModal.classList.contains('hidden')) return closeCustomEditorModal();
+        const createRoomModal = document.getElementById('create-room-modal');
+        if (createRoomModal && !createRoomModal.classList.contains('hidden')) return createRoomModal.classList.add('hidden');
+        if (exportCodeModal && !exportCodeModal.classList.contains('hidden')) return closeExportCodeModal();
+        if (characterInfoModal && !characterInfoModal.classList.contains('hidden')) return closeCharacterInfoModal();
+        if (cardPreviewModal && !cardPreviewModal.classList.contains('hidden')) return cardPreviewModal.classList.add('hidden');
+    });
+}
+
+function getCustomMadnessCards() {
+    try {
+        const raw = localStorage.getItem('insane_custom_madness_cards');
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveCustomMadnessCards(cards) {
+    localStorage.setItem('insane_custom_madness_cards', JSON.stringify(cards || []));
+}
+
+function generateId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 // Helper to get current data source
 function getCurrentData() {
-    return isBigFormat ? cardsData : oldCardsData;
+    const ALWAYS_CATEGORIES = new Set(['BlackDays', 'Blackdays', '刀之时代', '华之时代']);
+    const mergeExtras = (baseGroups, extraGroups) => {
+        const merged = baseGroups.map(group => ({
+            category: group.category,
+            cards: Array.isArray(group.cards) ? [...group.cards] : []
+        }));
+        const keys = new Set();
+        merged.forEach(g => {
+            (g.cards || []).forEach(c => {
+                const k = `${g.category}|${c && c.name ? c.name : ''}|${c && c.nameEn ? c.nameEn : ''}|${c && c.trigger ? c.trigger : ''}|${c && c.effect ? c.effect : ''}`;
+                keys.add(k);
+            });
+        });
+        extraGroups.forEach(group => {
+            const cat = group && group.category ? String(group.category) : '';
+            if (!ALWAYS_CATEGORIES.has(cat)) return;
+            let target = merged.find(g => g.category === cat);
+            if (!target) {
+                target = { category: cat, cards: [] };
+                merged.push(target);
+            }
+            (group.cards || []).forEach(c => {
+                const k = `${cat}|${c && c.name ? c.name : ''}|${c && c.nameEn ? c.nameEn : ''}|${c && c.trigger ? c.trigger : ''}|${c && c.effect ? c.effect : ''}`;
+                if (keys.has(k)) return;
+                keys.add(k);
+                target.cards.push(c);
+            });
+        });
+        return merged;
+    };
+
+    const baseRaw = isBigFormat ? cardsData : oldCardsData;
+    const base = isBigFormat ? mergeExtras(baseRaw, oldCardsData) : mergeExtras(baseRaw, cardsData);
+    const custom = getCustomMadnessCards();
+    if (!custom.length) return base;
+    const merged = base.map(group => ({
+        category: group.category,
+        cards: Array.isArray(group.cards) ? [...group.cards] : []
+    }));
+    custom.forEach(card => {
+        const cat = (card && card.category) ? String(card.category) : '用户原创狂气';
+        let group = merged.find(g => g.category === cat);
+        if (!group) {
+            group = { category: cat, cards: [] };
+            merged.push(group);
+        }
+        group.cards.push(card);
+    });
+    return merged;
 }
 
 // Populate Random Dialog Categories
@@ -443,20 +760,56 @@ function populateRandomDialogCategories() {
 
 // Render Category Filter
 function renderCategoryFilter() {
-    categoryFilter.innerHTML = '<option value="all">全部狂气</option>';
+    const getSelectedCategory = () => {
+        if (categoryFilterDesktop) return categoryFilterDesktop.value;
+        if (categoryFilterMobile) return categoryFilterMobile.value;
+        return 'all';
+    };
+    const setSelectedCategory = (v) => {
+        if (categoryFilterDesktop) categoryFilterDesktop.value = v;
+        if (categoryFilterMobile) categoryFilterMobile.value = v;
+    };
+
+    const prev = getSelectedCategory();
+    if (categoryFilterDesktop) categoryFilterDesktop.innerHTML = '<option value="all">全部狂气</option>';
+    if (categoryFilterMobile) categoryFilterMobile.innerHTML = '<option value="all">全部狂气</option>';
     const data = getCurrentData();
     const categories = [...new Set(data.map(c => c.category))];
     categories.forEach(cat => {
         const option = document.createElement('option');
         option.value = cat;
         option.textContent = cat;
-        categoryFilter.appendChild(option);
+        if (categoryFilterDesktop) categoryFilterDesktop.appendChild(option.cloneNode(true));
+        if (categoryFilterMobile) categoryFilterMobile.appendChild(option.cloneNode(true));
     });
+
+    const allowed = categories.includes(prev);
+    setSelectedCategory(allowed ? prev : 'all');
 }
 
-categoryFilter.addEventListener('change', () => {
-    renderMadnessCards();
-});
+function getSelectedCategory() {
+    if (categoryFilterDesktop) return categoryFilterDesktop.value;
+    if (categoryFilterMobile) return categoryFilterMobile.value;
+    return 'all';
+}
+
+function setSelectedCategory(v) {
+    if (categoryFilterDesktop) categoryFilterDesktop.value = v;
+    if (categoryFilterMobile) categoryFilterMobile.value = v;
+}
+
+if (categoryFilterDesktop) {
+    categoryFilterDesktop.addEventListener('change', () => {
+        setSelectedCategory(categoryFilterDesktop.value);
+        renderMadnessCards();
+    });
+}
+if (categoryFilterMobile) {
+    categoryFilterMobile.addEventListener('change', () => {
+        setSelectedCategory(categoryFilterMobile.value);
+        renderMadnessCards();
+    });
+}
 
 librarySearchInput.addEventListener('input', () => {
     renderMadnessCards();
@@ -469,139 +822,224 @@ if (toggleLibraryViewBtn) {
     });
 }
 
-// Resizable Panels Logic
-const resizers = document.querySelectorAll('.resizer');
+const DOCK_STORAGE_KEY = 'dock_order_v1';
 
-resizers.forEach(resizer => {
-    let isResizing = false;
-    let prevX = 0;
-    
-    // We bind these dynamically on mousedown to capture current context
-    let leftPanel = null;
-    let rightPanel = null;
+function applyDockOrder() {
+    const layout = document.querySelector('.game-layout');
+    if (!layout) return;
+    let order = null;
+    try {
+        order = JSON.parse(localStorage.getItem(DOCK_STORAGE_KEY) || 'null');
+    } catch {}
+    if (!Array.isArray(order) || order.length === 0) return;
+    order.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) layout.appendChild(el);
+    });
+}
 
-    resizer.addEventListener('mousedown', (e) => {
-        isResizing = true;
-        prevX = e.clientX;
-        leftPanel = resizer.previousElementSibling;
-        rightPanel = resizer.nextElementSibling;
-        
-        resizer.classList.add('resizing');
+function saveDockOrder() {
+    const layout = document.querySelector('.game-layout');
+    if (!layout) return;
+    const ids = Array.from(layout.children)
+        .filter(el => el && el.classList && el.classList.contains('resizable-panel'))
+        .map(el => el.id)
+        .filter(Boolean);
+    localStorage.setItem(DOCK_STORAGE_KEY, JSON.stringify(ids));
+}
+
+function initDocking() {
+    applyDockOrder();
+    const layout = document.querySelector('.game-layout');
+    if (!layout) return;
+
+    let draggedPanelId = null;
+    const handles = document.querySelectorAll('.dock-handle-btn[data-dock-panel]');
+    const panels = document.querySelectorAll('.resizable-panel');
+
+    const clearTargets = () => {
+        panels.forEach(p => {
+            p.classList.remove('dock-drop-target');
+            if (p.dataset) delete p.dataset.dropPos;
+        });
+        document.body.classList.remove('docking');
+    };
+
+    handles.forEach(btn => {
+        btn.addEventListener('dragstart', (e) => {
+            draggedPanelId = btn.dataset.dockPanel || null;
+            if (!draggedPanelId) return;
+            e.dataTransfer.setData('text/plain', draggedPanelId);
+            e.dataTransfer.effectAllowed = 'move';
+            document.body.classList.add('docking');
+        });
+
+        btn.addEventListener('dragend', () => {
+            draggedPanelId = null;
+            clearTargets();
+        });
+    });
+
+    panels.forEach(panel => {
+        panel.addEventListener('dragover', (e) => {
+            if (!draggedPanelId) return;
+            e.preventDefault();
+            panel.classList.add('dock-drop-target');
+            const rect = panel.getBoundingClientRect();
+            const before = e.clientX < rect.left + rect.width / 2;
+            panel.dataset.dropPos = before ? 'before' : 'after';
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        panel.addEventListener('dragleave', () => {
+            panel.classList.remove('dock-drop-target');
+            if (panel.dataset) delete panel.dataset.dropPos;
+        });
+
+        panel.addEventListener('drop', (e) => {
+            if (!draggedPanelId) return;
+            e.preventDefault();
+            const fromId = e.dataTransfer.getData('text/plain') || draggedPanelId;
+            const fromEl = document.getElementById(fromId);
+            if (!fromEl || fromEl === panel) return;
+
+            const rect = panel.getBoundingClientRect();
+            const before = e.clientX < rect.left + rect.width / 2;
+            layout.insertBefore(fromEl, before ? panel : panel.nextSibling);
+            saveDockOrder();
+            draggedPanelId = null;
+            clearTargets();
+        });
+    });
+}
+
+function initEdgeResize() {
+    if (!window.matchMedia('(hover: hover)').matches) return;
+    const layout = document.querySelector('.game-layout');
+    if (!layout) return;
+
+    const constraints = {
+        'character-column': { min: 200, max: 520 },
+        'deck-3d-column': { min: 240, max: 560 },
+        'library-section': { min: 160, max: 900 }
+    };
+
+    const edgeSize = 6;
+    let hover = null;
+    let resizing = null;
+    let libraryAutoRaf = 0;
+
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    const getRule = (panel) => constraints[panel.id] || { min: 220, max: 9999 };
+    const isVisiblePanel = (el) => !!(el && el.classList && el.classList.contains('resizable-panel') && !el.classList.contains('hidden'));
+    const getMinWidth = (el) => {
+        if (!el || !el.id) return 200;
+        if (el.id === 'deck-content-column') return 260;
+        const rule = constraints[el.id];
+        return rule ? rule.min : 200;
+    };
+    const calcMaxFor = (target) => {
+        const rect = layout.getBoundingClientRect();
+        const others = Array.from(layout.children).filter(el => isVisiblePanel(el) && el !== target);
+        const minOthers = others.reduce((sum, el) => sum + getMinWidth(el), 0);
+        return Math.max(getRule(target).min, Math.floor(rect.width - minOthers));
+    };
+
+    const setCursor = (on) => {
+        layout.style.cursor = on ? 'col-resize' : '';
+        if (!on && document.body.style.cursor === 'col-resize') document.body.style.cursor = '';
+    };
+
+    const findPanelAt = (target) => {
+        if (!target) return null;
+        const el = target.closest && target.closest('.resizable-panel');
+        if (!el || !layout.contains(el)) return null;
+        return el;
+    };
+
+    layout.addEventListener('mousemove', (e) => {
+        if (resizing) return;
+        const panel = findPanelAt(e.target);
+        if (!panel) {
+            hover = null;
+            setCursor(false);
+            return;
+        }
+        const rect = panel.getBoundingClientRect();
+        const nearLeft = Math.abs(e.clientX - rect.left) <= edgeSize;
+        const nearRight = Math.abs(e.clientX - rect.right) <= edgeSize;
+        const canLeft = nearLeft && panel.previousElementSibling && panel.previousElementSibling.classList && panel.previousElementSibling.classList.contains('resizable-panel');
+        const canRight = nearRight && panel.nextElementSibling && panel.nextElementSibling.classList && panel.nextElementSibling.classList.contains('resizable-panel');
+        if (canLeft) {
+            hover = { panel, side: 'left' };
+            setCursor(true);
+            return;
+        }
+        if (canRight) {
+            hover = { panel, side: 'right' };
+            setCursor(true);
+            return;
+        }
+        hover = null;
+        setCursor(false);
+    });
+
+    layout.addEventListener('mouseleave', () => {
+        if (resizing) return;
+        hover = null;
+        setCursor(false);
+    });
+
+    layout.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        if (!hover) return;
+        const leftPanel = hover.side === 'right' ? hover.panel : hover.panel.previousElementSibling;
+        const rightPanel = hover.side === 'right' ? hover.panel.nextElementSibling : hover.panel;
+        if (!isVisiblePanel(leftPanel) || !isVisiblePanel(rightPanel)) return;
+
+        const activePanel = (rightPanel && rightPanel.id === 'library-section') ? rightPanel : leftPanel;
+        if (!activePanel || !activePanel.id || activePanel.id === 'deck-content-column') return;
+
+        const rule = { ...getRule(activePanel), max: calcMaxFor(activePanel) };
+        resizing = {
+            panel: activePanel,
+            startX: e.clientX,
+            startW: activePanel.getBoundingClientRect().width,
+            rule,
+            sign: (activePanel === rightPanel && hover.side === 'left') ? -1 : 1
+        };
+        const deckContent = document.getElementById('deck-content-column');
+        if (deckContent && deckContent.style && deckContent.style.flex && deckContent.style.flex.startsWith('0 0')) {
+            deckContent.style.flex = '1 1 0%';
+        }
         document.body.style.cursor = 'col-resize';
         document.body.style.userSelect = 'none';
-        
-        // Add global listeners
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    });
-
-    // Touch Support for Resizing
-    resizer.addEventListener('touchstart', (e) => {
-        if (e.touches.length !== 1) return;
-        isResizing = true;
-        prevX = e.touches[0].clientX;
-        leftPanel = resizer.previousElementSibling;
-        rightPanel = resizer.nextElementSibling;
-        
-        resizer.classList.add('resizing');
-        // Prevent default to avoid scrolling while resizing
         e.preventDefault();
-        
-        document.addEventListener('touchmove', onTouchMove, { passive: false });
-        document.addEventListener('touchend', onTouchEnd);
     });
 
-    function onMouseMove(e) {
-        if (!isResizing) return;
-        handleResizeMove(e.clientX);
-    }
-    
-    function onTouchMove(e) {
-        if (!isResizing) return;
-        e.preventDefault(); // Stop scrolling
-        handleResizeMove(e.touches[0].clientX);
-    }
-
-    function handleResizeMove(clientX) {
-        const dx = clientX - prevX;
-        prevX = clientX;
-        
-        // Identify which resizer this is
-        if (resizer.id === 'resizer-char-deck') {
-            // Dragging between Char (Left) and Deck (Right)
-            // Resize Left Panel (Char)
-            const newWidth = leftPanel.offsetWidth + dx;
-            if (newWidth > 200 && newWidth < 500) {
-                leftPanel.style.flex = `0 0 ${newWidth}px`;
-            }
-        } else if (resizer.id === 'resizer-deck-library') {
-            // Dragging between Deck (Left) and Library (Right)
-            // Resize Right Panel (Library) inversely
-            
-            // Calculate max available width to prevent pushing other columns off screen
-            // Total = Char(280) + Deck(min 200) + Library(current) + 3D(320)
-            // Available for Library = Window - Char - 3D - MinDeck
-            // Note: Char and 3D might be resizable too, but we use their current offsetWidth
-            
-            const charCol = document.getElementById('character-column');
-            const deck3dCol = document.getElementById('deck-3d-column');
-            const charWidth = charCol ? charCol.offsetWidth : 280;
-            const deck3dWidth = deck3dCol ? deck3dCol.offsetWidth : 320;
-            const minDeckWidth = 200;
-            
-            const maxLibraryWidth = window.innerWidth - charWidth - deck3dWidth - minDeckWidth;
-            
-            let newWidth = rightPanel.offsetWidth - dx;
-            
-            // Cap width
-            if (newWidth > maxLibraryWidth) newWidth = maxLibraryWidth;
-            
-            if (newWidth > 200 && newWidth < 800) {
-                rightPanel.style.flex = `0 0 ${newWidth}px`;
-                
-                // Auto-switch Mode Logic
-                // Threshold: 2x card width. Card width is 80px (small) or more in expanded.
-                // Expanded card is roughly 160px? 
-                // Let's say if width > 350px (approx 2 columns of expanded cards + gap), switch to grid.
-                // If width < 350px, switch to list/compact.
-                // Actually user said "2x card width". 
-                // Let's use 360px as a safe threshold.
-                if (newWidth >= 360 && !isLibraryExpanded) {
-                    setLibraryMode(true);
-                } else if (newWidth < 360 && isLibraryExpanded) {
-                    setLibraryMode(false);
-                }
-            }
-        } else if (resizer.id === 'resizer-library-3d') {
-            // Dragging between Library (Left) and 3D (Right)
-            // Resize Right Panel (3D) inversely?
-            // Same logic: Resizer is on LEFT of 3D panel.
-            const newWidth = rightPanel.offsetWidth - dx;
-            if (newWidth > 250 && newWidth < 500) {
-                rightPanel.style.flex = `0 0 ${newWidth}px`;
-            }
+    document.addEventListener('mousemove', (e) => {
+        if (!resizing) return;
+        const dx = (e.clientX - resizing.startX) * (resizing.sign || 1);
+        const maxNow = calcMaxFor(resizing.panel);
+        const nextW = clamp(resizing.startW + dx, resizing.rule.min, Math.min(resizing.rule.max, maxNow));
+        resizing.panel.style.flex = `0 0 ${Math.round(nextW)}px`;
+        if (resizing.panel && resizing.panel.id === 'library-section') {
+            if (libraryAutoRaf) cancelAnimationFrame(libraryAutoRaf);
+            libraryAutoRaf = requestAnimationFrame(() => {
+                libraryAutoRaf = 0;
+                autoLibraryModeByWidth();
+            });
         }
-    }
+    });
 
-    function onMouseUp() {
-        stopResizing();
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-    }
-    
-    function onTouchEnd() {
-        stopResizing();
-        document.removeEventListener('touchmove', onTouchMove);
-        document.removeEventListener('touchend', onTouchEnd);
-    }
-    
-    function stopResizing() {
-        isResizing = false;
-        resizer.classList.remove('resizing');
-        document.body.style.cursor = 'default';
+    document.addEventListener('mouseup', () => {
+        if (!resizing) return;
+        resizing = null;
+        document.body.style.cursor = '';
         document.body.style.userSelect = '';
-    }
-});
+        autoLibraryModeByWidth();
+    });
+}
 
 
 // Initialize library mode correctly
@@ -612,30 +1050,44 @@ function setLibraryMode(expanded) {
         madnessContainer.classList.remove('compact-view');
         madnessContainer.classList.add('expanded-view');
         if(libraryModeLabel) libraryModeLabel.textContent = '平铺模式';
-        // Ensure minimum width if manually toggled
-        if (librarySection.offsetWidth < 360) {
-            librarySection.style.flex = '0 0 360px';
-        }
     } else {
         librarySection.classList.add('compact');
         madnessContainer.classList.remove('expanded-view');
         madnessContainer.classList.add('compact-view');
         if(libraryModeLabel) libraryModeLabel.textContent = '堆叠模式';
-        // Allow shrinking
-        if (librarySection.offsetWidth > 350) {
-            librarySection.style.flex = '0 0 250px';
-        }
     }
+}
+
+function getMadnessCardWidth() {
+    try {
+        const sample = madnessContainer ? madnessContainer.querySelector('.card') : null;
+        if (sample) {
+            const w = sample.getBoundingClientRect().width;
+            if (Number.isFinite(w) && w > 0) return Math.max(160, w);
+        }
+    } catch (e) {}
+    return 160;
+}
+
+function autoLibraryModeByWidth() {
+    if (!librarySection || !madnessContainer) return;
+    if (librarySection.classList.contains('hidden')) return;
+    const w = librarySection.getBoundingClientRect().width;
+    const cardW = getMadnessCardWidth();
+    const expandedThreshold = cardW * 2 + 10;
+    const compactThreshold = cardW + 6;
+    if (w >= expandedThreshold && !isLibraryExpanded) setLibraryMode(true);
+    else if (w <= compactThreshold && isLibraryExpanded) setLibraryMode(false);
 }
 
 // Initial mode check (on load)
 function checkLibraryMode() {
-    setLibraryMode(isLibraryExpanded);
+    autoLibraryModeByWidth();
 }
 
 // Render Madness Cards (Library)
 function renderMadnessCards() {
-    const filterCategory = categoryFilter.value;
+    const filterCategory = getSelectedCategory();
     const searchTerm = librarySearchInput.value.trim().toLowerCase();
     
     madnessContainer.innerHTML = '';
@@ -687,6 +1139,7 @@ function renderMadnessCards() {
             madnessContainer.appendChild(cardEl);
         });
     });
+    autoLibraryModeByWidth();
 }
 
 // Auto-scale removed in favor of scrollbar
@@ -762,6 +1215,21 @@ function createCardElement(card, isDeckItem = false) {
             </div>
     `;
 
+    if (card.isCustom) {
+        const badge = document.createElement('div');
+        badge.className = 'card-custom-badge';
+        badge.textContent = '原创';
+        el.appendChild(badge);
+    }
+
+    if (card.iconUrl) {
+        const icon = document.createElement('img');
+        icon.className = 'card-icon';
+        icon.alt = '';
+        icon.src = card.iconUrl;
+        el.appendChild(icon);
+    }
+
     if (isDeckItem) {
         // Drag Handle
         const dragHandle = document.createElement('div');
@@ -812,27 +1280,532 @@ function createCardElement(card, isDeckItem = false) {
 const deleteConfirmModal = document.getElementById('delete-confirm-modal');
 const deleteConfirmBtnFinal = document.getElementById('delete-confirm-btn-final');
 const deleteCancelBtn = document.getElementById('delete-cancel-btn');
-let pendingDeleteCharId = null;
+const deleteConfirmTitle = document.getElementById('delete-confirm-title');
+const deleteConfirmMessage = document.getElementById('delete-confirm-message');
+let activeConfirmCleanup = null;
 
-function openDeleteConfirmModal(charId) {
-    pendingDeleteCharId = charId;
-    deleteConfirmModal.classList.remove('hidden');
-}
+function openConfirmDialog(opts) {
+    const title = opts && opts.title ? String(opts.title) : '确认删除?';
+    const message = opts && opts.message ? String(opts.message) : '删除后将无法恢复，确定要继续吗？';
+    const confirmText = opts && opts.confirmText ? String(opts.confirmText) : '确认删除';
 
-if (deleteCancelBtn) {
-    deleteCancelBtn.addEventListener('click', () => {
-        deleteConfirmModal.classList.add('hidden');
-        pendingDeleteCharId = null;
+    return new Promise(resolve => {
+        if (!deleteConfirmModal || !deleteConfirmBtnFinal || !deleteCancelBtn) {
+            resolve(false);
+            return;
+        }
+
+        if (activeConfirmCleanup) activeConfirmCleanup(false);
+
+        if (deleteConfirmTitle) deleteConfirmTitle.textContent = title;
+        if (deleteConfirmMessage) deleteConfirmMessage.textContent = message;
+        deleteConfirmBtnFinal.textContent = confirmText;
+
+        const cleanup = (result) => {
+            if (!deleteConfirmModal.classList.contains('hidden')) {
+                deleteConfirmModal.classList.add('hidden');
+            }
+            activeConfirmCleanup = null;
+            resolve(!!result);
+        };
+
+        activeConfirmCleanup = cleanup;
+        deleteConfirmModal.classList.remove('hidden');
+
+        deleteCancelBtn.addEventListener('click', () => cleanup(false), { once: true });
+        deleteConfirmBtnFinal.addEventListener('click', () => cleanup(true), { once: true });
+        deleteConfirmModal.addEventListener('click', (e) => {
+            if (e.target === deleteConfirmModal) cleanup(false);
+        }, { once: true });
     });
 }
 
-if (deleteConfirmBtnFinal) {
-    deleteConfirmBtnFinal.addEventListener('click', () => {
-        if (pendingDeleteCharId) {
-            deleteCharacter(pendingDeleteCharId);
-            pendingDeleteCharId = null;
+function openDeleteConfirmModal(charId) {
+    openConfirmDialog({
+        title: '确认删除角色？',
+        message: '删除后将无法恢复，确定要继续吗？',
+        confirmText: '确认删除'
+    }).then(confirmed => {
+        if (confirmed) deleteCharacter(charId);
+    });
+}
+
+function closeCharacterInfoModal() {
+    if (!characterInfoModal) return;
+    characterInfoModal.classList.add('hidden');
+    characterInfoCharId = null;
+}
+
+function stepNumberInput(input, delta) {
+    if (!input) return;
+    const cur = Number(input.value || 0);
+    const base = Number.isFinite(cur) ? cur : 0;
+    const next = Math.max(0, Math.trunc(base + delta));
+    input.value = String(next);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+function openCharacterInfoModal(charId) {
+    if (!characterInfoModal) return;
+    const room = getCurrentRoom();
+    if (!room) return;
+    const char = room.characters.find(c => c.id === charId);
+    if (!char) return;
+    characterInfoCharId = charId;
+
+    if (characterInfoTitle) characterInfoTitle.textContent = `${char.name} · 角色信息`;
+
+    if (charNameInput) charNameInput.value = char.name || '';
+    if (charCardColorInput) charCardColorInput.value = (char.color && typeof char.color === 'string') ? char.color : '#3b82f6';
+
+    const sanityCurrentDefault = Number.isFinite(char.sanityCurrent) ? char.sanityCurrent : 6;
+    const sanityMaxDefault = Number.isFinite(char.sanityMax) ? char.sanityMax : 6;
+    const hpCurrentDefault = Number.isFinite(char.hpCurrent) ? char.hpCurrent : 6;
+    const hpMaxDefault = Number.isFinite(char.hpMax) ? char.hpMax : 6;
+
+    if (charSanityCurrentInput) charSanityCurrentInput.value = String(sanityCurrentDefault);
+    if (charSanityMaxInput) charSanityMaxInput.value = String(sanityMaxDefault);
+    if (charHpCurrentInput) charHpCurrentInput.value = String(hpCurrentDefault);
+    if (charHpMaxInput) charHpMaxInput.value = String(hpMaxDefault);
+
+    if (charItemGrid) {
+        const itemDefs = [
+            { key: 'stimulant', name: '镇定剂', icon: '💉' },
+            { key: 'amulet', name: '护身符', icon: '🧿' },
+            { key: 'weapon', name: '武器', icon: '🗡️' }
+        ];
+
+        const legacy = char.items && typeof char.items === 'object' ? char.items : {};
+        const counts = char.itemCounts && typeof char.itemCounts === 'object' ? char.itemCounts : {};
+        const normalized = {};
+        itemDefs.forEach(def => {
+            const v = counts[def.key];
+            if (Number.isFinite(v)) normalized[def.key] = Math.max(0, Math.trunc(v));
+            else normalized[def.key] = legacy[def.key] ? 1 : 0;
+        });
+        char.itemCounts = normalized;
+
+        charItemGrid.innerHTML = '';
+        itemDefs.forEach(def => {
+            const cell = document.createElement('div');
+            cell.className = 'item-editor-cell';
+
+            const icon = document.createElement('div');
+            icon.className = 'item-editor-icon';
+            icon.textContent = def.icon;
+
+            const name = document.createElement('div');
+            name.className = 'item-editor-name';
+            name.textContent = def.name;
+
+            const top = document.createElement('div');
+            top.className = 'item-editor-top';
+            top.appendChild(icon);
+            top.appendChild(name);
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = '0';
+            input.step = '1';
+            input.className = 'nav-input item-count-input';
+            input.value = String(normalized[def.key] || 0);
+
+            input.addEventListener('input', () => {
+                if (!characterInfoCharId) return;
+                const r = getCurrentRoom();
+                if (!r) return;
+                const c = r.characters.find(x => x.id === characterInfoCharId);
+                if (!c) return;
+                if (!c.itemCounts || typeof c.itemCounts !== 'object') c.itemCounts = {};
+                const n = Math.max(0, Math.trunc(Number(input.value || 0)));
+                c.itemCounts[def.key] = n;
+                saveData();
+            });
+
+            cell.appendChild(top);
+            cell.appendChild(input);
+            charItemGrid.appendChild(cell);
+        });
+    }
+
+    if (charNotesInput) {
+        charNotesInput.value = char.notes || '';
+        if (charNotesCount) charNotesCount.textContent = String(charNotesInput.value.length);
+    }
+
+    characterInfoModal.classList.remove('hidden');
+}
+
+if (characterInfoCloseBtn) {
+    characterInfoCloseBtn.addEventListener('click', closeCharacterInfoModal);
+}
+if (characterInfoModal) {
+    characterInfoModal.addEventListener('click', (e) => {
+        if (e.target === characterInfoModal) closeCharacterInfoModal();
+    });
+}
+if (charNotesInput) {
+    charNotesInput.addEventListener('input', () => {
+        if (charNotesCount) charNotesCount.textContent = String(charNotesInput.value.length);
+        if (!characterInfoCharId) return;
+        const room = getCurrentRoom();
+        if (!room) return;
+        const char = room.characters.find(c => c.id === characterInfoCharId);
+        if (!char) return;
+        char.notes = charNotesInput.value;
+        saveData();
+    });
+}
+
+if (charNameInput) {
+    charNameInput.addEventListener('input', () => {
+        if (!characterInfoCharId) return;
+        const room = getCurrentRoom();
+        if (!room) return;
+        const char = room.characters.find(c => c.id === characterInfoCharId);
+        if (!char) return;
+        char.name = charNameInput.value.slice(0, 30);
+        if (characterInfoTitle) characterInfoTitle.textContent = `${char.name} · 角色信息`;
+        const card = document.querySelector(`.character-card-container[data-char-id="${characterInfoCharId}"] .char-name`);
+        if (card) card.textContent = char.name;
+        saveData();
+        updateRoomDropdown();
+    });
+}
+
+if (charCardColorInput) {
+    charCardColorInput.addEventListener('input', () => {
+        if (!characterInfoCharId) return;
+        const room = getCurrentRoom();
+        if (!room) return;
+        const char = room.characters.find(c => c.id === characterInfoCharId);
+        if (!char) return;
+        char.color = charCardColorInput.value;
+        const card = document.querySelector(`.character-card-container[data-char-id="${characterInfoCharId}"]`);
+        if (card) setCharColorVars(card, char.color);
+        saveData();
+    });
+}
+
+[charSanityCurrentInput, charSanityMaxInput, charHpCurrentInput, charHpMaxInput].forEach(el => {
+    if (!el) return;
+    el.addEventListener('input', () => {
+        if (!characterInfoCharId) return;
+        const room = getCurrentRoom();
+        if (!room) return;
+        const char = room.characters.find(c => c.id === characterInfoCharId);
+        if (!char) return;
+        char.sanityCurrent = Math.max(0, Math.trunc(Number(charSanityCurrentInput ? charSanityCurrentInput.value : 0)));
+        char.sanityMax = Math.max(0, Math.trunc(Number(charSanityMaxInput ? charSanityMaxInput.value : 0)));
+        char.hpCurrent = Math.max(0, Math.trunc(Number(charHpCurrentInput ? charHpCurrentInput.value : 0)));
+        char.hpMax = Math.max(0, Math.trunc(Number(charHpMaxInput ? charHpMaxInput.value : 0)));
+        const statsEl = document.querySelector(`.character-card-container[data-char-id="${characterInfoCharId}"] .char-stats-inline`);
+        if (statsEl) statsEl.textContent = formatCharStatsText(char);
+        saveData();
+    });
+});
+
+[
+    [charSanityCurrentDecBtn, charSanityCurrentInput, -1],
+    [charSanityCurrentIncBtn, charSanityCurrentInput, 1],
+    [charSanityMaxDecBtn, charSanityMaxInput, -1],
+    [charSanityMaxIncBtn, charSanityMaxInput, 1],
+    [charHpCurrentDecBtn, charHpCurrentInput, -1],
+    [charHpCurrentIncBtn, charHpCurrentInput, 1],
+    [charHpMaxDecBtn, charHpMaxInput, -1],
+    [charHpMaxIncBtn, charHpMaxInput, 1]
+].forEach(([btn, input, delta]) => {
+    if (!btn || !input) return;
+    btn.addEventListener('click', () => stepNumberInput(input, delta));
+});
+
+ 
+
+function closeCustomEditorModal() {
+    if (!customEditorModal) return;
+    customEditorModal.classList.add('hidden');
+}
+
+function buildCustomDraft() {
+    return {
+        id: '',
+        category: (customGroupInput ? customGroupInput.value.trim() : ''),
+        name: (customNameInput ? customNameInput.value.trim() : ''),
+        nameEn: '',
+        trigger: (customTriggerInput ? customTriggerInput.value.trim() : ''),
+        effect: (customEffectInput ? customEffectInput.value.trim() : ''),
+        remarks: (customRemarksInput ? customRemarksInput.value.trim() : ''),
+        isCustom: true
+    };
+}
+
+function validateCustomDraft(draft) {
+    if (!draft.category) return '狂气分组为必填（≤30字）';
+    if (draft.category.length > 30) return '狂气分组不能超过30字';
+    if (!draft.name) return '名称为必填（≤30字）';
+    if (draft.name.length > 30) return '名称不能超过30字';
+    if (draft.remarks.length > 500) return '备注不能超过500字';
+    if (!draft.trigger) return '触发条件为必填';
+    if (!draft.effect) return '触发效果为必填';
+    return '';
+}
+
+function updateCustomEditor() {
+    if (!customEditorModal) return;
+    const draft = buildCustomDraft();
+    const error = validateCustomDraft(draft);
+    if (customEditorError) {
+        if (error) {
+            customEditorError.textContent = error;
+            customEditorError.classList.remove('hidden');
+        } else {
+            customEditorError.textContent = '';
+            customEditorError.classList.add('hidden');
         }
-        deleteConfirmModal.classList.add('hidden');
+    }
+    if (customSaveBtn) customSaveBtn.disabled = !!error;
+
+    if (customPreviewContainer) {
+        customPreviewContainer.innerHTML = '';
+        const previewCard = createCardElement({
+            ...draft,
+            category: draft.category || '用户原创狂气'
+        }, false);
+        previewCard.style.pointerEvents = 'none';
+        previewCard.removeAttribute('draggable');
+        customPreviewContainer.appendChild(previewCard);
+    }
+}
+
+function openCustomEditorModal() {
+    if (!customEditorModal) return;
+    if (customGroupInput) customGroupInput.value = '';
+    if (customNameInput) customNameInput.value = '';
+    if (customTriggerInput) customTriggerInput.value = '';
+    if (customEffectInput) customEffectInput.value = '';
+    if (customRemarksInput) customRemarksInput.value = '';
+    if (customEditorError) {
+        customEditorError.textContent = '';
+        customEditorError.classList.add('hidden');
+    }
+    customEditorModal.classList.remove('hidden');
+    updateCustomEditor();
+}
+
+if (createCustomMadnessBtn) {
+    createCustomMadnessBtn.addEventListener('click', () => {
+        openCustomEditorModal();
+    });
+}
+if (customEditorCloseBtn) customEditorCloseBtn.addEventListener('click', closeCustomEditorModal);
+if (customEditorModal) {
+    customEditorModal.addEventListener('click', (e) => {
+        if (e.target === customEditorModal) closeCustomEditorModal();
+    });
+}
+
+ [customGroupInput, customNameInput, customTriggerInput, customEffectInput, customRemarksInput].forEach(el => {
+    if (el) el.addEventListener('input', updateCustomEditor);
+    if (el && el.tagName === 'SELECT') el.addEventListener('change', updateCustomEditor);
+});
+
+if (customSaveBtn) {
+    customSaveBtn.addEventListener('click', () => {
+        const draft = buildCustomDraft();
+        const error = validateCustomDraft(draft);
+        if (error) {
+            if (customEditorError) {
+                customEditorError.textContent = error;
+                customEditorError.classList.remove('hidden');
+            }
+            return;
+        }
+        const saved = {
+            id: generateId(),
+            category: draft.category,
+            name: draft.name,
+            nameEn: '',
+            trigger: draft.trigger,
+            effect: draft.effect,
+            remarks: draft.remarks,
+            isCustom: true
+        };
+        const list = getCustomMadnessCards();
+        list.push(saved);
+        saveCustomMadnessCards(list);
+        renderCategoryFilter();
+        renderMadnessCards();
+        populateRandomDialogCategories();
+        closeCustomEditorModal();
+        showToast('原创狂气已保存');
+    });
+}
+
+function base64UrlEncodeBytes(bytes) {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlDecodeToBytes(b64url) {
+    const padLen = (4 - (b64url.length % 4)) % 4;
+    const b64 = (b64url + '='.repeat(padLen)).replace(/-/g, '+').replace(/_/g, '/');
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+}
+
+async function encodeExportPayload(payload) {
+    const json = JSON.stringify(payload);
+    if (typeof CompressionStream !== 'undefined') {
+        try {
+            const stream = new Blob([json], { type: 'application/json' }).stream().pipeThrough(new CompressionStream('gzip'));
+            const buf = await new Response(stream).arrayBuffer();
+            return `G1.${base64UrlEncodeBytes(new Uint8Array(buf))}`;
+        } catch (e) {}
+    }
+    const bytes = new TextEncoder().encode(json);
+    return `J1.${base64UrlEncodeBytes(bytes)}`;
+}
+
+async function decodeExportPayload(code) {
+    if (!code) throw new Error('empty');
+    if (code.startsWith('G1.')) {
+        if (typeof DecompressionStream === 'undefined') throw new Error('no_decompress');
+        const bytes = base64UrlDecodeToBytes(code.slice(3));
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+        const buf = await new Response(stream).arrayBuffer();
+        const json = new TextDecoder().decode(new Uint8Array(buf));
+        return JSON.parse(json);
+    }
+    if (code.startsWith('J1.')) {
+        const bytes = base64UrlDecodeToBytes(code.slice(3));
+        const json = new TextDecoder().decode(bytes);
+        return JSON.parse(json);
+    }
+    if (code.trim().startsWith('{')) return JSON.parse(code);
+    throw new Error('invalid');
+}
+
+function closeExportCodeModal() {
+    if (!exportCodeModal) return;
+    exportCodeModal.classList.add('hidden');
+}
+
+async function openExportCodeModal() {
+    if (!exportCodeModal) return;
+    const room = getCurrentRoom();
+    if (!room) return;
+    const payload = {
+        version: 2,
+        room,
+        isBigFormat,
+        customMadnessCards: getCustomMadnessCards()
+    };
+    const code = await encodeExportPayload(payload);
+    if (exportCodeText) {
+        if ('value' in exportCodeText) exportCodeText.value = code;
+        else exportCodeText.textContent = code;
+    }
+    exportCodeModal.classList.remove('hidden');
+}
+
+async function importRoomFromCode(code, progressFillEl, statusEl) {
+    if (!code) {
+        if (statusEl) statusEl.textContent = '请输入房间码';
+        if (progressFillEl) progressFillEl.style.width = '0%';
+        return false;
+    }
+    if (statusEl) statusEl.textContent = '解析房间码...';
+    if (progressFillEl) progressFillEl.style.width = '15%';
+
+    let payload;
+    try {
+        payload = await decodeExportPayload(code);
+    } catch (e) {
+        if (statusEl) statusEl.textContent = '房间码无效或不受支持';
+        if (progressFillEl) progressFillEl.style.width = '0%';
+        return false;
+    }
+
+    if (statusEl) statusEl.textContent = '重建房间...';
+    if (progressFillEl) progressFillEl.style.width = '55%';
+
+    try {
+        const importedRoom = payload.room;
+        const newRoom = {
+            id: Date.now().toString(),
+            name: importedRoom && importedRoom.name ? importedRoom.name : '导入房间',
+            deck: Array.isArray(importedRoom.deck) ? importedRoom.deck : [],
+            characters: Array.isArray(importedRoom.characters) ? importedRoom.characters : []
+        };
+        rooms.push(newRoom);
+
+        if (typeof payload.isBigFormat !== 'undefined') {
+            isBigFormat = !!payload.isBigFormat;
+            localStorage.setItem('insane_big_format', isBigFormat);
+            if (bigFormatToggle) bigFormatToggle.checked = isBigFormat;
+            const mobileBigFormatCheckbox = document.getElementById('big-format-toggle-mobile');
+            if (mobileBigFormatCheckbox) mobileBigFormatCheckbox.checked = isBigFormat;
+        }
+
+        const incomingCustom = Array.isArray(payload.customMadnessCards) ? payload.customMadnessCards : [];
+        if (incomingCustom.length) {
+            const existing = getCustomMadnessCards();
+            const seen = new Set(existing.map(c => c.id));
+            incomingCustom.forEach(c => {
+                if (c && c.id && !seen.has(c.id)) {
+                    existing.push(c);
+                    seen.add(c.id);
+                }
+            });
+            saveCustomMadnessCards(existing);
+        }
+
+        saveData();
+        updateRoomDropdown();
+        selectRoom(newRoom.id);
+        renderCategoryFilter();
+        renderMadnessCards();
+        populateRandomDialogCategories();
+    } catch (e) {
+        if (statusEl) statusEl.textContent = '导入失败，请重试';
+        if (progressFillEl) progressFillEl.style.width = '0%';
+        return false;
+    }
+
+    if (statusEl) statusEl.textContent = '导入完成';
+    if (progressFillEl) progressFillEl.style.width = '100%';
+    showToast('房间已导入');
+    return true;
+}
+
+if (generateExportCodeBtn) generateExportCodeBtn.addEventListener('click', () => { openExportCodeModal(); });
+if (mobileGenerateExportCodeBtn) mobileGenerateExportCodeBtn.addEventListener('click', () => { openExportCodeModal(); });
+if (exportCloseBtn) exportCloseBtn.addEventListener('click', closeExportCodeModal);
+if (exportCodeModal) {
+    exportCodeModal.addEventListener('click', (e) => {
+        if (e.target === exportCodeModal) closeExportCodeModal();
+    });
+}
+if (exportCopyBtn) {
+    exportCopyBtn.addEventListener('click', async () => {
+        let code = '';
+        if (exportCodeText) {
+            if ('value' in exportCodeText) code = exportCodeText.value;
+            else code = exportCodeText.textContent;
+        }
+        if (!code) return;
+        try {
+            await navigator.clipboard.writeText(code);
+            showToast('已复制房间码');
+        } catch (e) {
+            showToast('复制失败，请手动复制');
+        }
     });
 }
 
@@ -855,9 +1828,58 @@ function showCardContextMenu(x, y, card) {
         }
     ];
 
+    if (card && card.isCustom) {
+        actions.push({
+            label: '删除狂气',
+            danger: true,
+            action: () => {
+                const list = getCustomMadnessCards();
+                const exists = list.some(c => c && c.id === card.id);
+                if (!exists) return;
+                openConfirmDialog({
+                    title: '确认删除原创狂气？',
+                    message: `确定要删除「${card.name}」吗？`,
+                    confirmText: '确认删除'
+                }).then(confirmed => {
+                    if (!confirmed) return;
+                    const next = list.filter(c => !(c && c.id === card.id));
+                    saveCustomMadnessCards(next);
+                    renderCategoryFilter();
+                    renderMadnessCards();
+                    populateRandomDialogCategories();
+                    showToast('已删除原创狂气');
+                });
+            }
+        });
+        actions.push({
+            label: '删除分组',
+            danger: true,
+            action: () => {
+                const category = card.category ? String(card.category) : '';
+                if (!category) return;
+                const list = getCustomMadnessCards();
+                const count = list.filter(c => c && c.isCustom && String(c.category || '') === category).length;
+                if (!count) return;
+                openConfirmDialog({
+                    title: '确认删除分组？',
+                    message: `确定要删除分组「${category}」吗？该分组下的原创狂气将全部删除（${count}张）。`,
+                    confirmText: '确认删除'
+                }).then(confirmed => {
+                    if (!confirmed) return;
+                    const next = list.filter(c => !(c && c.isCustom && String(c.category || '') === category));
+                    saveCustomMadnessCards(next);
+                    renderCategoryFilter();
+                    renderMadnessCards();
+                    populateRandomDialogCategories();
+                    showToast('已删除分组');
+                });
+            }
+        });
+    }
+
     actions.forEach(act => {
         const item = document.createElement('div');
-        item.className = 'context-menu-item';
+        item.className = `context-menu-item ${act.danger ? 'danger' : ''}`;
         item.textContent = act.label;
         item.onclick = () => {
             act.action();
@@ -872,22 +1894,12 @@ function showCardContextMenu(x, y, card) {
 
 // Room Management
 createRoomBtn.addEventListener('click', () => {
-    const roomName = roomNameInput.value.trim();
-    if (roomName) {
-        const newRoom = {
-            id: Date.now().toString(),
-            name: roomName,
-            deck: [],
-            characters: [] 
-        };
-        rooms.push(newRoom);
-        saveData();
-        updateRoomDropdown();
-        selectRoom(newRoom.id);
-        roomNameInput.value = '';
-    } else {
-        alert("请输入房间名");
+    if (typeof window.openCreateRoomModal === 'function') {
+        window.openCreateRoomModal();
+        return;
     }
+    const modal = document.getElementById('create-room-modal');
+    if (modal) modal.classList.remove('hidden');
 });
 
 roomSelectDropdown.addEventListener('change', (e) => {
@@ -990,45 +2002,26 @@ modalConfirm.addEventListener('click', () => {
     const name = modalInput.value.trim();
     if (!name) return;
 
-    if (editingCharId) {
-        // Edit existing
-        const room = getCurrentRoom();
-        const char = room.characters.find(c => c.id === editingCharId);
-        if (char) {
-            char.name = name;
-            saveData();
-            renderCharacters(room);
-        }
-    } else {
-        // Create new
-        const room = getCurrentRoom();
-        if (room) {
-             if (!room.characters) room.characters = [];
-             const color = CHARACTER_COLORS[Math.floor(Math.random() * CHARACTER_COLORS.length)];
-             const emoji = AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)];
-             const newChar = {
-                id: Date.now().toString(),
-                name: name,
-                color: color,
-                emoji: emoji,
-                cards: []
-            };
-            room.characters.push(newChar);
-            saveData();
-            selectCharacter(newChar.id);
-            renderCharacters(room);
-        }
+    const room = getCurrentRoom();
+    if (room) {
+        if (!room.characters) room.characters = [];
+        const used = new Set(room.characters.map(c => (c && typeof c.color === 'string' ? c.color.toLowerCase() : '')).filter(Boolean));
+        const color = pickUniqueRandomColor(used);
+        const emoji = AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)];
+        const newChar = {
+            id: Date.now().toString(),
+            name: name,
+            color: color,
+            emoji: emoji,
+            cards: []
+        };
+        room.characters.push(newChar);
+        saveData();
+        selectCharacter(newChar.id);
+        renderCharacters(room);
     }
     charModal.classList.add('hidden');
 });
-
-function openRenameModal(char) {
-    editingCharId = char.id;
-    modalTitle.textContent = "修改角色名";
-    modalInput.value = char.name;
-    charModal.classList.remove('hidden');
-    modalInput.focus();
-}
 
 
 // --- Card Preview Modal ---
@@ -1076,6 +2069,7 @@ function openRenameModal(char) {
     }
 
     function renderCharacters(room) {
+    saveCardPositions(); // Save positions before re-rendering
     characterListDiv.innerHTML = '';
     if (!room.characters) room.characters = [];
     
@@ -1086,6 +2080,7 @@ function openRenameModal(char) {
         const charEl = document.createElement('div');
         charEl.className = 'character-card-container';
         charEl.dataset.charId = char.id;
+        if (char.color) setCharColorVars(charEl, char.color);
         if (char.id === currentCharacterId) {
             charEl.classList.add('selected');
         }
@@ -1109,32 +2104,6 @@ function openRenameModal(char) {
         const headerSection = document.createElement('div');
         headerSection.className = 'char-header-section';
 
-        // Avatar
-        const avatarContainer = document.createElement('div');
-        avatarContainer.className = 'char-avatar-container';
-        
-        if (char.avatarImage) {
-            avatarContainer.style.backgroundImage = `url('${char.avatarImage}')`;
-            avatarContainer.style.backgroundSize = 'cover';
-            avatarContainer.style.backgroundPosition = 'center';
-            avatarContainer.style.backgroundColor = 'transparent';
-        } else {
-            avatarContainer.style.backgroundColor = char.color;
-        }
-        
-        avatarContainer.onclick = (e) => {
-             e.stopPropagation();
-             openAvatarModal(char);
-        };
-        
-        if (!char.avatarImage) {
-            const emojiSpan = document.createElement('span');
-            emojiSpan.className = 'avatar-emoji';
-            emojiSpan.textContent = char.emoji;
-            avatarContainer.appendChild(emojiSpan);
-        }
-        headerSection.appendChild(avatarContainer);
-
         // Info Column
         const infoSection = document.createElement('div');
         infoSection.className = 'char-info-section';
@@ -1149,9 +2118,20 @@ function openRenameModal(char) {
         nameSpan.title = char.name;
         nameSpan.onclick = (e) => {
             e.stopPropagation();
-            openRenameModal(char);
+            selectCharacter(char.id);
+            openCharacterInfoModal(char.id);
         };
         nameRow.appendChild(nameSpan);
+
+        const statsSpan = document.createElement('span');
+        statsSpan.className = 'char-stats-inline';
+        statsSpan.textContent = formatCharStatsText(char);
+        statsSpan.onclick = (e) => {
+            e.stopPropagation();
+            selectCharacter(char.id);
+            openCharacterInfoModal(char.id);
+        };
+        nameRow.appendChild(statsSpan);
         
         infoSection.appendChild(nameRow);
 
@@ -1162,7 +2142,7 @@ function openRenameModal(char) {
         const revealedCount = char.cards.filter(c => c.isRevealed).length;
         metaRow.innerHTML = `
             <span class="char-tag">狂气: ${char.cards.length}</span>
-            ${revealedCount > 0 ? `<span class="char-tag" style="color:#E53935">已触发: ${revealedCount}</span>` : ''}
+            ${revealedCount > 0 ? `<span class="char-tag danger">已触发: ${revealedCount}</span>` : ''}
         `;
         
         infoSection.appendChild(metaRow);
@@ -1192,13 +2172,33 @@ function openRenameModal(char) {
             char.cards.forEach(card => {
                 const miniCard = document.createElement('div');
                 miniCard.className = `char-mini-card ${card.isRevealed ? 'revealed' : ''}`;
+                miniCard.dataset.cardId = card.uniqueId; // Add ID for animation
                 
                 if (card.isRevealed) {
                     miniCard.textContent = card.name;
+                    
+                    // Set char count for CSS-based dynamic sizing
+                    miniCard.style.setProperty('--char-count', card.name.length);
+                    miniCard.style.fontSize = ''; // Ensure no inline override from previous logic
+
+                    // Only show revealOrder if > 0
+                    if (card.revealOrder > 0) {
+                        const badge = document.createElement('div');
+                        badge.className = 'card-reveal-badge';
+                        badge.textContent = card.revealOrder;
+                        miniCard.appendChild(badge);
+                    }
                 } else {
                     const backImg = card.isNewFormat ? 'img/【新ins】狂气卡背.png' : 'img/卡背.png';
                     miniCard.style.backgroundImage = `url('${backImg}')`;
                     miniCard.style.backgroundSize = 'cover';
+                    
+                    if (card.drawnOrder) {
+                        const badge = document.createElement('div');
+                        badge.className = 'card-drawn-badge';
+                        badge.textContent = card.drawnOrder;
+                        miniCard.appendChild(badge);
+                    }
                 }
                 
                 miniCard.onmouseenter = (e) => {
@@ -1295,6 +2295,54 @@ function openRenameModal(char) {
     addBtn.title = '新建角色';
     addBtn.onclick = () => addCharBtn.click();
     characterListDiv.appendChild(addBtn);
+    
+    // Trigger FLIP animation
+    animateCardPositions();
+}
+
+// Store previous positions for FLIP animation
+const cardPositions = new Map();
+
+function saveCardPositions() {
+    cardPositions.clear();
+    document.querySelectorAll('.char-mini-card').forEach(card => {
+        // Use a unique key based on card content or ID if available. 
+        // We don't have unique IDs on the element easily accessible unless we add them.
+        // Let's assume order might change, so we need a stable ID.
+        // We can add data-id to mini-cards.
+        const id = card.dataset.cardId;
+        if (id) {
+            const rect = card.getBoundingClientRect();
+            cardPositions.set(id, { left: rect.left, top: rect.top });
+        }
+    });
+}
+
+function animateCardPositions() {
+    document.querySelectorAll('.char-mini-card').forEach(card => {
+        const id = card.dataset.cardId;
+        const prev = cardPositions.get(id);
+        if (prev) {
+            const current = card.getBoundingClientRect();
+            const deltaX = prev.left - current.left;
+            const deltaY = prev.top - current.top;
+            
+            if (deltaX !== 0 || deltaY !== 0) {
+                // Invert
+                card.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                card.style.transition = 'none';
+                
+                // Force reflow
+                void card.offsetHeight;
+
+                // Play
+                requestAnimationFrame(() => {
+                    card.style.transition = 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)';
+                    card.style.transform = '';
+                });
+            }
+        }
+    });
 }
 
 // --- Context Menu ---
@@ -1334,6 +2382,42 @@ function showContextMenu(x, y, card, charId) {
                 });
             } else if (act.action === 'toggleReveal') {
                 card.isRevealed = !card.isRevealed;
+                
+                const room = getCurrentRoom();
+                const char = room.characters.find(c => c.id === charId);
+                
+                if (char) {
+                    if (card.isRevealed) {
+                        // Newly Revealed: Assign timestamp for sorting
+                        if (!card.revealedAt) {
+                            card.revealedAt = Date.now();
+                        }
+                    } else {
+                        // Hidden: Clear timestamp (moves back to unrevealed queue)
+                        card.revealedAt = null;
+                        card.revealOrder = null; // Clear old static order if present
+                    }
+                    
+                    // Re-sort and Re-index Revealed Cards
+                    // 1. Separate Revealed and Unrevealed
+                    const revealedCards = char.cards.filter(c => c.isRevealed);
+                    const unrevealedCards = char.cards.filter(c => !c.isRevealed);
+                    
+                    // 2. Sort Revealed by Timestamp (Oldest first)
+                    revealedCards.sort((a, b) => (a.revealedAt || 0) - (b.revealedAt || 0));
+                    
+                    // 3. Assign dynamic display index (1, 2, 3...)
+                    revealedCards.forEach((c, index) => {
+                        c.revealOrder = index + 1; // Update display number
+                    });
+                    
+                    // 4. Sort Unrevealed by Drawn Order
+                    unrevealedCards.sort((a, b) => (a.drawnOrder || 0) - (b.drawnOrder || 0));
+                    
+                    // 5. Merge Back
+                    char.cards = [...revealedCards, ...unrevealedCards];
+                }
+                
                 saveData();
                 renderCharacters(getCurrentRoom());
             } else {
@@ -1643,36 +2727,33 @@ function updateSessionInfo() {
         </div>
         <div class="info-divider"></div>
         <div class="info-section-title">各角色手牌 (点击展开):</div>
-        <div class="char-hand-list" style="display:flex; flex-direction:column; gap:4px;">
+        <div class="char-hand-list">
     `;
 
     if (charCounts.length === 0) {
-        html += `<div style="color:#999; font-size:0.8rem;">无角色</div>`;
+        html += `<div class="muted-small">无角色</div>`;
     } else {
         room.characters.forEach(char => {
             const unrevealedCards = char.cards.filter(c => !c.isRevealed);
             const handSize = unrevealedCards.length;
             let badgeClass = 'hand-count-badge';
-            let badgeStyle = '';
             
             if (handSize === 3) {
-                badgeStyle = 'background-color: #f1c40f; color: #333;'; // Yellow
+                badgeClass += ' warn';
             } else if (handSize >= 4) {
-                badgeStyle = 'background-color: #e74c3c; color: white;'; // Red
+                badgeClass += ' danger';
             }
 
             // Prepare names
             const handNames = unrevealedCards.map(c => `【${c.name}】`).join(' ') || '无手牌';
 
             html += `
-                <div class="char-hand-item-wrapper" style="border:1px solid #e5e7eb; border-radius:4px; background:white;">
-                    <div class="char-hand-header" 
-                         onclick="this.nextElementSibling.classList.toggle('hidden');" 
-                         style="padding:4px 8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; background:#f9fafb;">
-                        <span class="char-name-compact" title="${char.name}" style="font-weight:500;">${char.name}</span>
-                        <span class="${badgeClass}" style="${badgeStyle}">${handSize}</span>
+                <div class="char-hand-item-wrapper">
+                    <div class="char-hand-header" onclick="this.nextElementSibling.classList.toggle('hidden');">
+                        <span class="char-name-compact" title="${char.name}">${char.name}</span>
+                        <span class="${badgeClass}">${handSize}</span>
                     </div>
-                    <div class="hidden" style="padding:4px 8px; font-size:0.75rem; color:#666; border-top:1px solid #eee; background:white;">
+                    <div class="char-hand-detail hidden">
                         ${handNames}
                     </div>
                 </div>
@@ -1687,15 +2768,15 @@ function updateSessionInfo() {
     `;
 
     if (charRevealed.length === 0) {
-        html += `<div style="color:#999; font-size:0.8rem;">无</div>`;
+        html += `<div class="muted-small">无</div>`;
     } else {
         charRevealed.forEach(str => {
              // Split name and content
              const [name, content] = str.split(': ');
              html += `
-                <div style="margin-bottom:4px; font-size:0.8rem;">
-                    <span style="font-weight:bold;">${name}:</span>
-                    <span style="color:#c0392b;">${content}</span>
+                <div class="revealed-row">
+                    <span class="revealed-name">${name}:</span>
+                    <span class="revealed-content">${content}</span>
                 </div>
              `;
         });
@@ -1741,7 +2822,7 @@ function addToDeck(card) {
     saveData();
     updateDeckVisuals(room);
     triggerDeckAnimation('add'); // Visual feedback
-    renderMadnessCards(categoryFilter.value); // Refresh Library UI
+    renderMadnessCards(); // Refresh Library UI
 }
 
 function removeFromDeck(cardToRemove) {
@@ -1750,7 +2831,7 @@ function removeFromDeck(cardToRemove) {
     room.deck = room.deck.filter(c => c.uniqueId !== cardToRemove.uniqueId);
     saveData();
     updateDeckVisuals(room);
-    renderMadnessCards(categoryFilter.value); // Refresh Library UI
+    renderMadnessCards(); // Refresh Library UI
 }
 
 function clearDeck() {
@@ -2181,7 +3262,16 @@ function moveCardFromDeckToChar(cardUniqueId, charId) {
     const cardIndex = room.deck.findIndex(c => c.uniqueId.toString() === cardUniqueId);
     if (cardIndex > -1) {
         const [card] = room.deck.splice(cardIndex, 1);
-        char.cards.push({ ...card, isRevealed: false });
+        
+        // Calculate Drawn Order
+        const maxDrawn = char.cards.reduce((max, c) => Math.max(max, c.drawnOrder || 0), 0);
+        
+        char.cards.push({ 
+            ...card, 
+            isRevealed: false,
+            drawnOrder: maxDrawn + 1,
+            revealOrder: null // Reset
+        });
         saveData();
         updateDeckVisuals(room);
         renderCharacters(room);
@@ -2421,14 +3511,20 @@ function drawToCharacter(count) {
     }
     
     function performDraw() {
+        // Track drawn order locally
+        let currentMaxDrawn = char.cards.reduce((max, c) => Math.max(max, c.drawnOrder || 0), 0);
+
         for(let i=0; i<count; i++) {
             // Draw from Top (End of array)
             const card = room.deck.pop();
+            currentMaxDrawn++;
             
             // Add to character hand
             char.cards.push({
                 ...card,
-                isRevealed: false // Face down initially
+                isRevealed: false, // Face down initially
+                drawnOrder: currentMaxDrawn,
+                revealOrder: null
             });
         }
         
