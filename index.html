@@ -22,7 +22,6 @@
                         <input type="checkbox" id="big-format-toggle" class="nav-toggle-checkbox">
                         大判
                     </label>
-                    <input type="text" id="room-name-input" placeholder="新房间名" class="nav-input" style="width:120px;">
                     <button id="create-room-btn" class="nav-action-btn nav-btn-primary">
                         <span>+</span> 新建
                     </button>
@@ -36,6 +35,18 @@
                 <!-- Delete Room -->
                 <button id="session-info-btn" class="nav-action-btn nav-btn-text" title="本局信息">
                     本局信息
+                </button>
+                <button id="generate-export-code-btn" class="nav-action-btn nav-btn-text" style="height:32px; width:32px; padding:0;" title="生成房间码" aria-label="生成房间码">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <path d="M7 10l5 5 5-5"></path>
+                        <path d="M12 15V3"></path>
+                    </svg>
+                </button>
+                <button id="dark-mode-toggle-pc" class="dark-mode-toggle" title="切换黑夜模式">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
                 </button>
                 <button id="delete-room-btn" class="nav-action-btn nav-btn-danger" title="删除当前房间">
                     ✕
@@ -58,10 +69,25 @@
                 <!-- Right Actions -->
                 <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                     <!-- Create Room -->
-                    <button id="mobile-create-room-btn" class="nav-action-btn nav-btn-primary" style="width: 32px; height: 32px; padding: 0;" title="新建房间">
+                    <button id="mobile-create-room-btn" class="nav-action-btn nav-btn-primary" style="width: 32px; height: 32px; padding: 0; min-width: 32px !important;" title="新建房间">
                         <span style="font-size: 18px; line-height: 1;">+</span>
                     </button>
+
+                    <button id="mobile-generate-export-code-btn" class="nav-action-btn nav-btn-text" style="width: 32px; height: 32px; padding: 0; min-width: 32px !important;" title="生成房间码" aria-label="生成房间码">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <path d="M7 10l5 5 5-5"></path>
+                            <path d="M12 15V3"></path>
+                        </svg>
+                    </button>
                     
+                    <!-- Dark Mode -->
+                    <button id="dark-mode-toggle-mobile" class="dark-mode-toggle" style="width: 32px; height: 32px; border: none;" title="切换黑夜模式">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+
                     <!-- Delete Room -->
                     <button id="mobile-delete-room-btn" class="nav-action-btn nav-btn-danger" style="width: 32px; height: 32px; padding: 0;" title="删除">
                         ✕
@@ -83,6 +109,7 @@
                 <!-- 左侧：角色列表 (Character Column) -->
                 <div id="character-column" class="character-column resizable-panel" style="flex: 0 0 280px;">
                     <div class="panel-header unified-header">
+                        <button class="dock-handle-btn" type="button" draggable="true" data-dock-panel="character-column" title="拖拽停靠">⋮⋮</button>
                         <h3>角色列表</h3>
                         <button id="add-char-btn" title="新建角色" class="icon-btn-text">+</button>
                     </div>
@@ -91,64 +118,9 @@
                     </div>
                 </div>
 
-                <!-- Resizer Handle -->
-                <div class="resizer" id="resizer-char-deck"></div>
-
-                <!-- 中间：牌堆内容 (Deck Content) -->
-                <div id="deck-content-column" class="deck-content-column resizable-panel" style="flex: 2;">
-                    <div class="panel-header unified-header">
-                        <h3>牌堆内容</h3>
-                        <div style="display:flex; gap:0.5rem; align-items: center;">
-                            <button id="mobile-deck-close-btn" class="icon-btn mobile-only" style="border:none; font-size:1.2rem; margin-right: 4px;">✕</button>
-                            <button id="library-toggle-btn" class="library-toggle-btn desktop-only" title="狂气库">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="deck-list" class="deck-grid">
-                        <p class="empty-msg">
-                            牌堆为空<br>
-                            <span style="font-size:0.8em; margin-top:0.5em;">点击狂气库内狂气录入牌堆</span>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Resizer Handle -->
-                <div class="resizer" id="resizer-deck-library"></div>
-
-                <!-- 狂气库 (Library) - Now Right of Deck Content -->
-                <div id="library-section" class="library-section resizable-panel hidden" style="flex: 0 0 300px;">
-                    <div class="panel-header unified-header library-header">
-                        <h3>狂气库</h3>
-                        <div class="header-controls">
-                            <!-- Category Filter Moved Here -->
-                            <select id="category-filter" style="width: auto;">
-                                <option value="all">全部狂气</option>
-                            </select>
-                            
-                            <!-- Mode label removed -->
-                            <button id="mobile-library-close-btn" class="icon-btn" style="display:none; border:none; font-size:1.2rem;">✕</button>
-                        </div>
-                    </div>
-                    
-                    <div class="filter-box">
-                        <!-- Category Select Moved Up -->
-                        <input type="text" id="library-search-input" placeholder="搜索狂气..." style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                    </div>
-
-                    <div id="madness-container" class="library-grid expanded-view">
-                        <!-- Library Cards -->
-                    </div>
-                </div>
-
-                <!-- Resizer Handle -->
-                <div class="resizer" id="resizer-library-3d"></div>
-
-                <!-- 右侧：3D 牌堆 (3D Deck) -->
+                <!-- 牌堆预览 (3D Deck Preview) -->
                 <div id="deck-3d-column" class="deck-3d-column resizable-panel" style="flex: 0 0 320px;">
+                    <button class="dock-handle-btn dock-absolute" type="button" draggable="true" data-dock-panel="deck-3d-column" title="拖拽停靠">⋮⋮</button>
                     <div class="deck-pile-panel">
                         <!-- Mobile Split Layout Container -->
                         <div class="deck-preview-split-layout">
@@ -215,6 +187,62 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 牌堆内容 (Deck Content) -->
+                <div id="deck-content-column" class="deck-content-column resizable-panel" style="flex: 2;">
+                    <div class="panel-header unified-header">
+                        <button class="dock-handle-btn" type="button" draggable="true" data-dock-panel="deck-content-column" title="拖拽停靠">⋮⋮</button>
+                        <h3>牌堆内容</h3>
+                        <div style="display:flex; gap:0.5rem; align-items: center;">
+                            <button id="mobile-deck-close-btn" class="icon-btn mobile-only" style="border:none; font-size:1.2rem; margin-right: 4px;">✕</button>
+                            <button id="library-toggle-btn" class="library-toggle-btn desktop-only" title="狂气库">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="deck-list" class="deck-grid">
+                        <p class="empty-msg">
+                            牌堆为空<br>
+                            <span style="font-size:0.8em; margin-top:0.5em;">点击狂气库内狂气录入牌堆</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 狂气库 (Library) -->
+                <div id="library-section" class="library-section resizable-panel hidden" style="flex: 0 0 300px;">
+                    <div class="panel-header unified-header library-header">
+                        <button class="dock-handle-btn" type="button" draggable="true" data-dock-panel="library-section" title="拖拽停靠">⋮⋮</button>
+                        <h3>狂气库</h3>
+                        <div class="header-controls">
+                            <select id="category-filter-mobile" class="mobile-only" style="width: auto;">
+                                <option value="all">全部狂气</option>
+                            </select>
+                            <button id="mobile-library-close-btn" class="icon-btn" style="display:none; border:none; font-size:1.2rem;">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-box">
+                        <div class="library-search-row">
+                            <input type="text" id="library-search-input" placeholder="搜索狂气..." class="library-search-input">
+                            <button id="create-custom-madness-btn" class="nav-action-btn nav-btn-primary create-custom-madness-btn" title="新建原创狂气">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M12 5v14"></path>
+                                    <path d="M5 12h14"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <select id="category-filter" class="nav-select desktop-only" style="width: 100%;">
+                            <option value="all">全部狂气</option>
+                        </select>
+                    </div>
+
+                    <div id="madness-container" class="library-grid expanded-view">
+                        <!-- Library Cards -->
+                    </div>
+                </div>
             </div>
         </div>
         <!-- Bottom Navigation (Mobile Only) -->
@@ -254,11 +282,23 @@
 
     <div id="create-room-modal" class="modal hidden">
         <div class="modal-content">
-            <h3>新建房间</h3>
-            <input type="text" id="create-room-modal-input" placeholder="请输入房间名称">
-            <div class="modal-actions">
-                <button id="create-room-modal-cancel" class="nav-action-btn nav-btn-text">取消</button>
-                <button id="create-room-modal-confirm" class="nav-action-btn nav-btn-primary">确定</button>
+            <div class="modal-title-row">
+                <h3>新建 / 导入房间</h3>
+                <button id="create-room-modal-close" class="icon-btn" title="关闭">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="section-title">新建房间</div>
+                <input type="text" id="create-room-modal-input" placeholder="请输入房间名称" class="nav-input">
+                <div class="modal-actions" style="margin-top: 8px;">
+                    <button id="create-room-modal-confirm" class="nav-action-btn nav-btn-primary">新建</button>
+                </div>
+
+                <div class="section-title">导入房间</div>
+                <input id="create-room-modal-import-code" class="nav-input" type="text" placeholder="粘贴房间码（跨设备可用）">
+                <div id="create-room-import-status-text" class="import-status-text"></div>
+                <div class="modal-actions" style="margin-top: 8px;">
+                    <button id="create-room-modal-import-confirm" class="nav-action-btn nav-btn-primary">导入</button>
+                </div>
             </div>
         </div>
     </div>
@@ -315,10 +355,117 @@
     <div id="session-info-window" class="floating-window hidden" style="position: absolute; top: 100px; left: 100px; z-index: 1000; background: white; border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-radius: 8px; width: 300px;">
         <div id="session-info-header" style="padding: 10px; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; border-radius: 8px 8px 0 0; cursor: move; display: flex; justify-content: space-between; align-items: center;">
             <span style="font-weight: bold;">本局信息</span>
-            <button id="close-session-info" style="border: none; background: transparent; cursor: pointer; font-size: 1.2rem;">×</button>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button id="close-session-info" style="border: none; background: transparent; cursor: pointer; font-size: 1.2rem;">×</button>
+            </div>
         </div>
         <div id="session-info-content" style="padding: 15px; max-height: 400px; overflow-y: auto;">
             <!-- Content populated by JS -->
+        </div>
+    </div>
+
+    <div id="character-info-modal" class="modal hidden">
+        <div class="modal-content character-info-modal-content">
+            <div class="modal-title-row">
+                <h3 id="character-info-title">角色信息</h3>
+                <button id="character-info-close-btn" class="icon-btn" title="关闭">✕</button>
+            </div>
+            <div class="character-info-body">
+                <div class="field-row">
+                    <div class="field-col">
+                        <div class="section-title">名字</div>
+                        <input id="char-name-input" class="nav-input" type="text" maxlength="30" placeholder="角色名">
+                    </div>
+                    <div class="field-col">
+                        <div class="section-title">颜色</div>
+                        <input id="char-card-color" class="nav-input" type="color">
+                    </div>
+                </div>
+
+                <div class="stat-pair-grid">
+                    <div class="stat-block-card">
+                        <div class="stat-block-title">正气度</div>
+                        <div class="stat-block-grid">
+                            <div class="stat-field">
+                                <div class="stat-field-label">当前</div>
+                                <input id="char-sanity-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                            </div>
+                            <div class="stat-field">
+                                <div class="stat-field-label">上限</div>
+                                <input id="char-sanity-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-block-card">
+                        <div class="stat-block-title">生命力</div>
+                        <div class="stat-block-grid">
+                            <div class="stat-field">
+                                <div class="stat-field-label">当前</div>
+                                <input id="char-hp-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                            </div>
+                            <div class="stat-field">
+                                <div class="stat-field-label">上限</div>
+                                <input id="char-hp-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-title">道具数量</div>
+                <div class="item-editor-grid" id="char-item-grid"></div>
+
+                <div class="section-title">备注</div>
+                <textarea id="char-notes-input" class="notes-input" maxlength="500" placeholder="最多500字，自动保存"></textarea>
+                <div class="notes-counter"><span id="char-notes-count">0</span>/500</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-madness-editor-modal" class="modal hidden">
+        <div class="modal-content custom-editor-modal-content">
+            <div class="modal-title-row">
+                <h3>原创狂气编辑器</h3>
+                <button id="custom-editor-close-btn" class="icon-btn" title="关闭">✕</button>
+            </div>
+            <div class="custom-editor-layout">
+                <div class="custom-editor-form">
+                    <label class="form-label">狂气分组</label>
+                    <input id="custom-group" class="nav-input" type="text" maxlength="30" placeholder="必填（用于狂气库分组）">
+
+                    <label class="form-label">名称</label>
+                    <input id="custom-name" class="nav-input" type="text" maxlength="30" placeholder="最多30字">
+
+                    <label class="form-label">触发条件</label>
+                    <textarea id="custom-trigger" class="nav-input custom-textarea" placeholder="必填"></textarea>
+
+                    <label class="form-label">触发效果</label>
+                    <textarea id="custom-effect" class="nav-input custom-textarea" placeholder="必填"></textarea>
+
+                    <label class="form-label">备注</label>
+                    <textarea id="custom-remarks" class="nav-input custom-textarea" maxlength="500" placeholder="选填（最多500字）"></textarea>
+
+                    <div id="custom-editor-error" class="form-error hidden"></div>
+                    <button id="custom-save-btn" class="nav-action-btn nav-btn-primary" disabled>保存原创狂气</button>
+                </div>
+                <div class="custom-editor-preview">
+                    <div class="section-title">实时预览</div>
+                    <div id="custom-preview-container" class="custom-preview-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-code-modal" class="modal hidden">
+        <div class="modal-content export-modal-content">
+            <div class="modal-title-row">
+                <h3>房间码</h3>
+                <button id="export-close-btn" class="icon-btn" title="关闭">✕</button>
+            </div>
+            <div class="export-code-box">
+                <textarea id="export-code-text" class="export-code-text" readonly>--------</textarea>
+                <button id="export-copy-btn" class="nav-action-btn nav-btn-primary">复制</button>
+            </div>
+            <div class="export-hint">复制后，新建房间输入房间码即可导入此房间数据（包括原创狂气）。</div>
         </div>
     </div>
 
@@ -377,8 +524,8 @@
     <!-- Delete Confirmation Modal -->
     <div id="delete-confirm-modal" class="modal hidden">
         <div class="modal-content" style="max-width:320px; border-radius:12px; padding:24px;">
-            <h3 style="text-align:left; border:none; padding:0; margin-bottom:12px; font-size:18px; color:#333;">确认删除?</h3>
-            <p style="color:#666; font-size:14px; margin:0 0 24px 0;">删除后将无法恢复，确定要继续吗？</p>
+            <h3 id="delete-confirm-title" style="text-align:left; border:none; padding:0; margin-bottom:12px; font-size:18px; color:#333;">确认删除?</h3>
+            <p id="delete-confirm-message" style="color:#666; font-size:14px; margin:0 0 24px 0;">删除后将无法恢复，确定要继续吗？</p>
             <div style="display:flex; justify-content:flex-end; gap:12px;">
                 <button id="delete-cancel-btn" style="background:transparent; color:#666; border:none; padding:8px 16px; cursor:pointer; font-weight:500;">取消</button>
                 <button id="delete-confirm-btn-final" style="background:#f3f4f6; color:#e53935; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; font-weight:500;">确认删除</button>
