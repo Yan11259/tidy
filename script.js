@@ -256,9 +256,9 @@ if (libraryToggleBtn) {
         if (!librarySection.classList.contains('hidden')) {
             librarySection.classList.remove('collapsed');
             requestAnimationFrame(() => {
-                if (librarySection.offsetWidth < 200) {
-                    librarySection.style.flex = '0 0 300px';
-                }
+                if (librarySection.offsetWidth < 120) librarySection.style.flex = '0 0 300px';
+                setLibraryMode(isLibraryExpanded);
+                autoLibraryModeByWidth();
             });
         }
     });
@@ -1072,12 +1072,17 @@ function getMadnessCardWidth() {
 function autoLibraryModeByWidth() {
     if (!librarySection || !madnessContainer) return;
     if (librarySection.classList.contains('hidden')) return;
-    const w = librarySection.getBoundingClientRect().width;
+    const rectW = madnessContainer.getBoundingClientRect().width;
+    const cs = window.getComputedStyle ? getComputedStyle(madnessContainer) : null;
+    const padL = cs ? parseFloat(cs.paddingLeft) || 0 : 0;
+    const padR = cs ? parseFloat(cs.paddingRight) || 0 : 0;
+    const w = Math.max(0, rectW - padL - padR);
     const cardW = getMadnessCardWidth();
-    const expandedThreshold = cardW * 2 + 10;
-    const compactThreshold = cardW + 6;
-    if (w >= expandedThreshold && !isLibraryExpanded) setLibraryMode(true);
-    else if (w <= compactThreshold && isLibraryExpanded) setLibraryMode(false);
+    const gap = 10;
+    const expandedThreshold = cardW * 2 + gap;
+    const compactThreshold = cardW;
+    if (w >= expandedThreshold) setLibraryMode(true);
+    else if (w <= compactThreshold) setLibraryMode(false);
 }
 
 // Initial mode check (on load)
@@ -1087,6 +1092,7 @@ function checkLibraryMode() {
 
 // Render Madness Cards (Library)
 function renderMadnessCards() {
+    setLibraryMode(isLibraryExpanded);
     const filterCategory = getSelectedCategory();
     const searchTerm = librarySearchInput.value.trim().toLowerCase();
     
@@ -1390,17 +1396,12 @@ function openCharacterInfoModal(charId) {
             const cell = document.createElement('div');
             cell.className = 'item-editor-cell';
 
-            const icon = document.createElement('div');
-            icon.className = 'item-editor-icon';
-            icon.textContent = def.icon;
-
             const name = document.createElement('div');
             name.className = 'item-editor-name';
             name.textContent = def.name;
 
             const top = document.createElement('div');
             top.className = 'item-editor-top';
-            top.appendChild(icon);
             top.appendChild(name);
 
             const input = document.createElement('input');
@@ -1409,6 +1410,7 @@ function openCharacterInfoModal(charId) {
             input.step = '1';
             input.className = 'nav-input item-count-input';
             input.value = String(normalized[def.key] || 0);
+            input.dataset.itemKey = def.key;
 
             input.addEventListener('input', () => {
                 if (!characterInfoCharId) return;
@@ -1422,8 +1424,24 @@ function openCharacterInfoModal(charId) {
                 saveData();
             });
 
+            const stepper = document.createElement('div');
+            stepper.className = 'num-stepper';
+            const dec = document.createElement('button');
+            dec.type = 'button';
+            dec.className = 'num-step-btn minus';
+            dec.setAttribute('aria-label', '减少');
+            dec.textContent = '−';
+            const inc = document.createElement('button');
+            inc.type = 'button';
+            inc.className = 'num-step-btn plus';
+            inc.setAttribute('aria-label', '增加');
+            inc.textContent = '+';
+            stepper.appendChild(dec);
+            stepper.appendChild(input);
+            stepper.appendChild(inc);
+
             cell.appendChild(top);
-            cell.appendChild(input);
+            cell.appendChild(stepper);
             charItemGrid.appendChild(cell);
         });
     }
@@ -1505,19 +1523,17 @@ if (charCardColorInput) {
     });
 });
 
-[
-    [charSanityCurrentDecBtn, charSanityCurrentInput, -1],
-    [charSanityCurrentIncBtn, charSanityCurrentInput, 1],
-    [charSanityMaxDecBtn, charSanityMaxInput, -1],
-    [charSanityMaxIncBtn, charSanityMaxInput, 1],
-    [charHpCurrentDecBtn, charHpCurrentInput, -1],
-    [charHpCurrentIncBtn, charHpCurrentInput, 1],
-    [charHpMaxDecBtn, charHpMaxInput, -1],
-    [charHpMaxIncBtn, charHpMaxInput, 1]
-].forEach(([btn, input, delta]) => {
-    if (!btn || !input) return;
-    btn.addEventListener('click', () => stepNumberInput(input, delta));
-});
+if (characterInfoModal) {
+    characterInfoModal.addEventListener('click', (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('.num-step-btn') : null;
+        if (!btn) return;
+        const id = btn.dataset ? btn.dataset.target : '';
+        const input = id ? document.getElementById(id) : (btn.parentElement ? btn.parentElement.querySelector('input') : null);
+        if (!input) return;
+        const delta = btn.classList && btn.classList.contains('plus') ? 1 : -1;
+        stepNumberInput(input, delta);
+    });
+}
 
  
 
@@ -2072,6 +2088,9 @@ modalConfirm.addEventListener('click', () => {
     saveCardPositions(); // Save positions before re-rendering
     characterListDiv.innerHTML = '';
     if (!room.characters) room.characters = [];
+    const useMobileColumns = window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+    let pendingEmptyCol = null;
+    let pendingEmptyCount = 0;
     
     room.characters.forEach((char, index) => {
         if (!char.color) char.color = CHARACTER_COLORS[index % CHARACTER_COLORS.length];
@@ -2164,6 +2183,7 @@ modalConfirm.addEventListener('click', () => {
         // --- 2. Madness Zone (Bottom) ---
         const handSection = document.createElement('div');
         handSection.className = 'char-hand-section';
+        if (char.cards.length === 0) handSection.classList.add('is-empty');
         
         const gridInner = document.createElement('div');
         gridInner.className = 'char-hand-grid-inner';
@@ -2285,8 +2305,42 @@ modalConfirm.addEventListener('click', () => {
         
         handSection.appendChild(gridInner);
         charEl.appendChild(handSection);
-        characterListDiv.appendChild(charEl);
+        if (!useMobileColumns) {
+            characterListDiv.appendChild(charEl);
+        } else {
+            const hasMadness = Array.isArray(char.cards) && char.cards.length > 0;
+            if (hasMadness) {
+                if (pendingEmptyCol) {
+                    characterListDiv.appendChild(pendingEmptyCol);
+                    pendingEmptyCol = null;
+                    pendingEmptyCount = 0;
+                }
+                const col = document.createElement('div');
+                col.className = 'char-card-col';
+                col.appendChild(charEl);
+                characterListDiv.appendChild(col);
+            } else {
+                if (!pendingEmptyCol) {
+                    pendingEmptyCol = document.createElement('div');
+                    pendingEmptyCol.className = 'char-card-col';
+                    pendingEmptyCount = 0;
+                }
+                pendingEmptyCol.appendChild(charEl);
+                pendingEmptyCount += 1;
+                if (pendingEmptyCount >= 2) {
+                    characterListDiv.appendChild(pendingEmptyCol);
+                    pendingEmptyCol = null;
+                    pendingEmptyCount = 0;
+                }
+            }
+        }
     });
+
+    if (pendingEmptyCol) {
+        characterListDiv.appendChild(pendingEmptyCol);
+        pendingEmptyCol = null;
+        pendingEmptyCount = 0;
+    }
 
     // Add Character Button Card
     const addBtn = document.createElement('div');
@@ -2294,7 +2348,14 @@ modalConfirm.addEventListener('click', () => {
     addBtn.innerHTML = '<span>+</span>';
     addBtn.title = '新建角色';
     addBtn.onclick = () => addCharBtn.click();
-    characterListDiv.appendChild(addBtn);
+    if (!useMobileColumns) {
+        characterListDiv.appendChild(addBtn);
+    } else {
+        const col = document.createElement('div');
+        col.className = 'char-card-col';
+        col.appendChild(addBtn);
+        characterListDiv.appendChild(col);
+    }
     
     // Trigger FLIP animation
     animateCardPositions();
