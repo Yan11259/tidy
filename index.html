@@ -215,7 +215,7 @@
                 <div id="library-section" class="library-section resizable-panel hidden" style="flex: 0 0 300px;">
                     <div class="panel-header unified-header library-header">
                         <button class="dock-handle-btn" type="button" draggable="true" data-dock-panel="library-section" title="拖拽停靠">⋮⋮</button>
-                        <h3>狂气库</h3>
+                        <h3>狂气库<span class="library-update-date">狂气更新日期：2026/3/19</span></h3>
                         <div class="header-controls">
                             <select id="category-filter-mobile" class="mobile-only" style="width: auto;">
                                 <option value="all">全部狂气</option>
@@ -388,11 +388,19 @@
                         <div class="stat-block-grid">
                             <div class="stat-field">
                                 <div class="stat-field-label">当前</div>
-                                <input id="char-sanity-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                <div class="num-stepper">
+                                    <button type="button" class="num-step-btn minus" data-target="char-sanity-current" aria-label="减少">−</button>
+                                    <input id="char-sanity-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                    <button type="button" class="num-step-btn plus" data-target="char-sanity-current" aria-label="增加">+</button>
+                                </div>
                             </div>
                             <div class="stat-field">
                                 <div class="stat-field-label">上限</div>
-                                <input id="char-sanity-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                <div class="num-stepper">
+                                    <button type="button" class="num-step-btn minus" data-target="char-sanity-max" aria-label="减少">−</button>
+                                    <input id="char-sanity-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                    <button type="button" class="num-step-btn plus" data-target="char-sanity-max" aria-label="增加">+</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -401,11 +409,19 @@
                         <div class="stat-block-grid">
                             <div class="stat-field">
                                 <div class="stat-field-label">当前</div>
-                                <input id="char-hp-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                <div class="num-stepper">
+                                    <button type="button" class="num-step-btn minus" data-target="char-hp-current" aria-label="减少">−</button>
+                                    <input id="char-hp-current" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                    <button type="button" class="num-step-btn plus" data-target="char-hp-current" aria-label="增加">+</button>
+                                </div>
                             </div>
                             <div class="stat-field">
                                 <div class="stat-field-label">上限</div>
-                                <input id="char-hp-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                <div class="num-stepper">
+                                    <button type="button" class="num-step-btn minus" data-target="char-hp-max" aria-label="减少">−</button>
+                                    <input id="char-hp-max" class="nav-input" type="number" min="0" step="1" inputmode="numeric">
+                                    <button type="button" class="num-step-btn plus" data-target="char-hp-max" aria-label="增加">+</button>
+                                </div>
                             </div>
                         </div>
                     </div>
