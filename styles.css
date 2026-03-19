@@ -425,6 +425,133 @@ h1, h2, h3, h4 {
     border-radius: 10px;
     font-weight: bold;
 }
+
+#session-info-window .info-divider {
+    background: var(--border-subtle);
+}
+
+#session-info-window .info-section-title {
+    color: var(--text-secondary);
+    font-weight: 800;
+}
+
+#session-info-window .muted-small {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+#session-info-window .char-hand-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+    gap: 8px;
+}
+
+#session-info-window .char-hand-item-wrapper {
+    background: var(--bg-surface-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#session-info-window .char-hand-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    user-select: none;
+    background: transparent;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+body.dark-mode #session-info-window .char-hand-header {
+    background: transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.10);
+}
+
+#session-info-window .char-hand-header:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+#session-info-window .char-hand-header:active {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+#session-info-window .char-hand-header:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.45);
+    outline-offset: 2px;
+}
+
+#session-info-window .char-hand-header::after {
+    content: "▾";
+    margin-left: 6px;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+#session-info-window .char-name-compact {
+    max-width: none;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#session-info-window .hand-count-badge {
+    margin-left: auto;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+    background: rgba(59, 130, 246, 0.14);
+    color: var(--text-primary);
+    border: 1px solid rgba(59, 130, 246, 0.22);
+}
+
+#session-info-window .hand-count-badge.warn {
+    background: rgba(241, 196, 15, 0.20);
+    border-color: rgba(241, 196, 15, 0.32);
+}
+
+#session-info-window .hand-count-badge.danger {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: rgba(239, 68, 68, 0.28);
+}
+
+#session-info-window .char-hand-detail {
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-subtle);
+    white-space: normal;
+    word-break: break-word;
+}
+
+#session-info-window .revealed-row {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+}
+
+#session-info-window .revealed-name {
+    font-weight: 800;
+    color: var(--text-primary);
+    flex: 0 0 auto;
+}
+
+#session-info-window .revealed-content {
+    color: rgba(239, 68, 68, 0.92);
+    flex: 1 1 auto;
+    min-width: 0;
+}
 .app-header {
     flex: 0 0 48px; /* Reduced from 64px to 48px as per "too high" request */
     background: white; 
