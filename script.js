@@ -2810,7 +2810,7 @@ function updateSessionInfo() {
 
             html += `
                 <div class="char-hand-item-wrapper">
-                    <div class="char-hand-header" onclick="this.nextElementSibling.classList.toggle('hidden');">
+                    <div class="char-hand-header">
                         <span class="char-name-compact" title="${char.name}">${char.name}</span>
                         <span class="${badgeClass}">${handSize}</span>
                     </div>
@@ -2843,24 +2843,45 @@ function updateSessionInfo() {
         });
     }
 
-    // Update Desktop Window (if visible)
+    const bindHandInfoToggles = (root) => {
+        if (!root) return;
+        const headers = root.querySelectorAll('.char-hand-header');
+        headers.forEach(header => {
+            header.setAttribute('role', 'button');
+            header.tabIndex = 0;
+            const detail = header.nextElementSibling;
+            const sync = () => {
+                const expanded = detail && !detail.classList.contains('hidden');
+                header.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            };
+            const toggle = () => {
+                if (!detail) return;
+                detail.classList.toggle('hidden');
+                sync();
+            };
+            header.onclick = (e) => {
+                e.preventDefault();
+                toggle();
+            };
+            header.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggle();
+                }
+            };
+            sync();
+        });
+    };
+
     if (!sessionInfoWindow.classList.contains('hidden')) {
         sessionInfoContent.innerHTML = html;
+        bindHandInfoToggles(sessionInfoContent);
     }
 
-    // Mobile Embed Update (Always)
     const mobileEmbed = document.getElementById('mobile-session-info-embed');
     if (mobileEmbed) {
         mobileEmbed.innerHTML = html;
-        // Make sure hidden details are handled
-        // Re-attach listeners for mobile embed
-        const headers = mobileEmbed.querySelectorAll('.char-hand-header');
-        headers.forEach(header => {
-            header.onclick = function() {
-                const detail = this.nextElementSibling;
-                if(detail) detail.classList.toggle('hidden');
-            };
-        });
+        bindHandInfoToggles(mobileEmbed);
     }
 }
 
