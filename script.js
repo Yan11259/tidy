@@ -968,8 +968,8 @@ function initEdgeResize() {
         const rect = panel.getBoundingClientRect();
         const nearLeft = Math.abs(e.clientX - rect.left) <= edgeSize;
         const nearRight = Math.abs(e.clientX - rect.right) <= edgeSize;
-        const canLeft = nearLeft && panel.previousElementSibling && panel.previousElementSibling.classList && panel.previousElementSibling.classList.contains('resizable-panel');
-        const canRight = nearRight && panel.nextElementSibling && panel.nextElementSibling.classList && panel.nextElementSibling.classList.contains('resizable-panel');
+        const canLeft = nearLeft && isVisiblePanel(panel.previousElementSibling);
+        const canRight = nearRight && isVisiblePanel(panel.nextElementSibling);
         if (canLeft) {
             hover = { panel, side: 'left' };
             setCursor(true);
@@ -997,8 +997,14 @@ function initEdgeResize() {
         const rightPanel = hover.side === 'right' ? hover.panel.nextElementSibling : hover.panel;
         if (!isVisiblePanel(leftPanel) || !isVisiblePanel(rightPanel)) return;
 
-        const activePanel = (rightPanel && rightPanel.id === 'library-section') ? rightPanel : leftPanel;
-        if (!activePanel || !activePanel.id || activePanel.id === 'deck-content-column') return;
+        let activePanel = leftPanel;
+        let sign = 1;
+        if (leftPanel && leftPanel.id === 'deck-content-column') {
+            activePanel = rightPanel;
+            sign = -1;
+        }
+        if (!activePanel || !activePanel.id) return;
+        if (activePanel.id === 'deck-content-column') return;
 
         const rule = { ...getRule(activePanel), max: calcMaxFor(activePanel) };
         resizing = {
@@ -1006,7 +1012,7 @@ function initEdgeResize() {
             startX: e.clientX,
             startW: activePanel.getBoundingClientRect().width,
             rule,
-            sign: (activePanel === rightPanel && hover.side === 'left') ? -1 : 1
+            sign
         };
         const deckContent = document.getElementById('deck-content-column');
         if (deckContent && deckContent.style && deckContent.style.flex && deckContent.style.flex.startsWith('0 0')) {
